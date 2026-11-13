@@ -1,5 +1,6 @@
 export interface Plano {
-    id?: string;
+    id: string;
+    created_at?: string | null;
     nome: string;
     descricao: string;
     icon: string;
@@ -8,3 +9,5 @@ export interface Plano {
     duracao_meses: number;
     ativo: boolean;
 }
+
+export type PlanoInput = Omit<Plano, "id" | "created_at">;

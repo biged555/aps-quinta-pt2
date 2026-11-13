@@ -1,14 +1,16 @@
 import { Router } from "express";
 import AlunoController from "../controller/AlunoController.js";
 
-const router = Router();
+export default function criarAlunoRoutes(controller: AlunoController) {
+    const router = Router();
 
-router.get("/", AlunoController.getAll);
-router.get("/search", AlunoController.getByKeyword);
-router.get("/plano/:planoId", AlunoController.getByPlano);
-router.get("/:id", AlunoController.getById);
-router.post("/", AlunoController.create);
-router.put("/:id", AlunoController.update);
-router.delete("/:id", AlunoController.remove);
+    router.get("/", controller.getAll);
+    router.get("/search", controller.getByKeyword);
+    router.get("/plano/:planoId", controller.getByPlano);
+    router.get("/:id", controller.getById);
+    router.post("/", controller.create);
+    router.put("/:id", controller.update);
+    router.delete("/:id", controller.remove);
 
-export default router;
+    return router;
+}

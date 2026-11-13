@@ -1,111 +1,56 @@
-import supabase from "../config/supabase.js";
-import type { Aluno } from "../model/Aluno.js";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Aluno, AlunoInput } from "../model/Aluno.js";
+import type { IAlunoRepository } from "./IAlunoRepository.js";
+import { RepositoryError } from "../errors/AppError.js";
 
-async function findAll() {
-    const { data, error } = await supabase
-        .from("alunos")
-        .select("*")
-        .order("nome", { ascending: true });
+export default class AlunoRepository implements IAlunoRepository {
+    constructor(private readonly client: SupabaseClient) {}
 
-    if (error) {
-        throw error;
+    async findAll(): Promise<Aluno[]> {
+        const { data, error } = await this.client.from("alunos").select("*").order("nome", { ascending: true });
+        if (error) throw new RepositoryError(error.code, error.message);
+        return data as Aluno[];
     }
 
-    return data;
-}
-
-async function findById(id: string) {
-    const { data, error } = await supabase
-        .from("alunos")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-    if (error) {
-        throw error;
+    async findById(id: string): Promise<Aluno | null> {
+        const { data, error } = await this.client.from("alunos").select("*").eq("id", id).maybeSingle();
+        if (error) throw new RepositoryError(error.code, error.message);
+        return data as Aluno | null;
     }
 
-    return data;
-}
-
-async function findByPlano(planoId: string) {
-    const { data, error } = await supabase
-        .from("alunos")
-        .select("*")
-        .eq("planoId", planoId)
-        .order("nome", { ascending: true });
-
-    if (error) {
-        throw error;
+    async create(input: AlunoInput): Promise<Aluno> {
+        const { data, error } = await this.client.from("alunos").insert(input).select().single();
+        if (error) throw new RepositoryError(error.code, error.message);
+        return data as Aluno;
     }
 
-    return data;
-}
-
-async function create(aluno: Aluno) {
-    const { data, error } = await supabase
-        .from("alunos")
-        .insert(aluno)
-        .select()
-        .single();
-
-    if (error) {
-        throw error;
+    async update(id: string, input: AlunoInput): Promise<Aluno | null> {
+        const { data, error } = await this.client.from("alunos").update(input).eq("id", id).select().maybeSingle();
+        if (error) throw new RepositoryError(error.code, error.message);
+        return data as Aluno | null;
     }
 
-    return data;
-}
-
-async function update(id: string, aluno: Aluno) {
-    const { data, error } = await supabase
-        .from("alunos")
-        .update(aluno)
-        .eq("id", id)
-        .select()
-        .single();
-
-    if (error) {
-        throw error;
+    async remove(id: string): Promise<Aluno | null> {
+        const { data, error } = await this.client.from("alunos").delete().eq("id", id).select().maybeSingle();
+        if (error) throw new RepositoryError(error.code, error.message);
+        return data as Aluno | null;
     }
 
-    return data;
-}
-
-async function remove(id: string) {
-    const { data, error } = await supabase
-        .from("alunos")
-        .delete()
-        .eq("id", id)
-        .select()
-        .single();
-
-    if (error) {
-        throw error;
+    async searchByKeyword(keyword: string): Promise<Aluno[]> {
+        const { data, error } = await this.client.from("alunos").select("*").or(`nome.ilike.%${keyword}%,email.ilike.%${keyword}%`).order("nome", { ascending: true });
+        if (error) throw new RepositoryError(error.code, error.message);
+        return data as Aluno[];
     }
 
-    return data;
-}
-
-async function searchByKeyword(keyword: string) {
-    const { data, error } = await supabase
-        .from("alunos")
-        .select("*")
-        .or(`nome.ilike.%${keyword}%,email.ilike.%${keyword}%`)
-        .order("nome", { ascending: true });
-
-    if (error) {
-        throw error;
+    async findByPlano(planoId: string): Promise<Aluno[]> {
+        const { data, error } = await this.client.from("alunos").select("*").eq("planoId", planoId).order("nome", { ascending: true });
+        if (error) throw new RepositoryError(error.code, error.message);
+        return data as Aluno[];
     }
 
-    return data;
-}
-
-export default {
-    findAll,
-    findById,
-    findByPlano,
-    create,
-    update,
-    remove,
-    searchByKeyword,
+    async existsByPlano(planoId: string): Promise<boolean> {
+        const { count, error } = await this.client.from("alunos").select("id", { count: "exact", head: true }).eq("planoId", planoId);
+        if (error) throw new RepositoryError(error.code, error.message);
+        return (count ?? 0) > 0;
+    }
 }

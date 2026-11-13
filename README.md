@@ -698,9 +698,9 @@ Resposta (**400 Bad Request**) — todos os problemas encontrados são retornado
 | **409 Conflict** | Tentativa de excluir um plano que ainda possui alunos vinculados (violação de chave estrangeira) |
 | **500 Internal Server Error** | Falha inesperada na comunicação com o banco de dados |
 
-> Os códigos são definidos explicitamente nos Controllers (ex.: `res.status(201).json(plano)`), e os
-> erros são tratados com `try/catch` em todas as funções, registrando a causa no console do servidor
-> sem expor detalhes internos ao cliente.
+> Os Controllers definem as respostas de sucesso. Os Services lançam erros de aplicação, tratados
+> pelo middleware central. O Express 5 encaminha rejeições dos handlers assíncronos a esse middleware.
+> Falhas inesperadas retornam 500 e são registradas no servidor sem expor detalhes ao cliente.
 
 ---
 
@@ -726,7 +726,7 @@ Sequência sugerida para demonstração e arguição do projeto:
 
 1. **Apresentar o domínio e as entidades** (seção 4): problema, planos, alunos e o relacionamento 1:N.
 2. **Mostrar a estrutura de pastas** (seção 5) e explicar o caminho da requisição:
-   `routes → controller → repository → Supabase`.
+   `routes → controller → service → repository → Supabase`.
 3. **Mostrar as tabelas no Supabase** (`planos` e `alunos`), destacando a coluna `id` do tipo `uuid`,
    a chave primária e a chave estrangeira `alunos.planoId → planos.id`.
 4. **Executar `npm run dev`** e abrir `GET /` no Postman para verificar que a API está no ar.
@@ -746,3 +746,67 @@ Sequência sugerida para demonstração e arguição do projeto:
 ---
 
 Desenvolvido para a APS da disciplina de **Desenvolvimento Back-End** — 2026.
+
+
+## 14. Evolução — branch `01-arquitetura-services`
+
+A primeira etapa da avaliação final mantém as duas entidades e todas as rotas da APS.
+A tag `entrega-parte-1` identifica a versão anterior à refatoração.
+
+### Camadas e orientação a objetos
+
+O fluxo é `Routes → Controllers → Services → Repositories → Supabase`.
+
+- `src/model`: interfaces das entidades persistidas e tipos de entrada sem `id`/`created_at`.
+- `src/controller`: classes responsáveis pelas respostas HTTP.
+- `src/services`: classes com regras de negócio e dependências privadas recebidas pelo construtor.
+- `src/repositories`: classes de acesso ao Supabase e interfaces que permitem mocks nos testes.
+- `src/validators`: validação de entradas desconhecidas, UUID, datas e palavras-chave.
+- `src/errors` e `src/middlewares`: erros tipados e tratamento centralizado em JSON.
+- `src/app.ts`: fábrica `createApp`, que recebe os repositories sem carregar credenciais.
+- `src/server.ts`: conecta os repositories reais ao cliente Supabase e inicia o servidor.
+
+As pastas existentes `model` e `controller` foram mantidas para reduzir alterações de caminhos.
+
+### Regras e respostas desta etapa
+
+Planos não aceitam valores negativos, duração menor que um mês ou ordem de exibição inválida.
+A exclusão de plano com alunos retorna 409; a FK continua protegendo a integridade no banco.
+
+Alunos exigem plano existente (400 quando ausente). Cadastro ou transferência para plano inativo
+retorna 409. Editar um aluno mantendo seu plano atual é permitido mesmo se o plano foi desativado.
+O valor negociado do aluno pode diferir do preço do plano. Datas de nascimento futuras ou inexistentes
+são rejeitadas, assim como valores negativos e não finitos.
+
+Todos os IDs de rota inválidos retornam 400. Registros ausentes retornam 404 e falhas inesperadas
+retornam 500, sem serem confundidas com ausência de registro. JSON malformado retorna 400; corpo
+acima do limite do Express retorna 413. Exclusões bem-sucedidas continuam retornando 200 com mensagem.
+Enviar `id` ou `created_at` no POST/PUT retorna 400; outros campos extras não são persistidos.
+PUT continua exigindo todos os campos editáveis.
+
+Pesquisas mantêm correspondência parcial e ordenação. O termo é aparado e não aceita vírgulas,
+parênteses, aspas, barra invertida ou curingas `%`/`*`, evitando alterar a expressão de filtro.
+
+### Testes unitários
+
+```bash
+npm install
+npm run typecheck
+npm run build
+npm test
+npm run test:unit
+npm run test:watch
+```
+
+Os testes ficam em `src/tests/unit` e usam Vitest com repositories simulados.
+Não exigem `.env`, conexão com o Supabase nem alterações no banco.
+Verificam regras dos Services, sucesso/falha, ausência de gravação em entradas inválidas,
+conflitos de relacionamento e tratamento de erros. A configuração segue a
+[documentação do Vitest](https://vitest.dev/config/).
+
+`npm run typecheck` verifica também os tipos dos testes. `npm run build` gera somente o código
+normal da aplicação em `dist`, sem incluir testes. Para executar a compilação local com `.env`, use
+`node --env-file=.env dist/server.js`; `npm start` pressupõe variáveis já configuradas no ambiente.
+
+Mensalidades, testes de integração, relatório de cobertura e Swagger pertencem às próximas etapas.
+Esta branch não altera o schema nem executa operações no banco real.

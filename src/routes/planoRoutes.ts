@@ -1,13 +1,15 @@
 import { Router } from "express";
 import PlanoController from "../controller/PlanoController.js";
 
-const router = Router();
+export default function criarPlanoRoutes(controller: PlanoController) {
+    const router = Router();
 
-router.get("/", PlanoController.getAll);
-router.get("/search", PlanoController.getByKeyword);
-router.get("/:id", PlanoController.getById);
-router.post("/", PlanoController.create);
-router.put("/:id", PlanoController.update);
-router.delete("/:id", PlanoController.remove);
+    router.get("/", controller.getAll);
+    router.get("/search", controller.getByKeyword);
+    router.get("/:id", controller.getById);
+    router.post("/", controller.create);
+    router.put("/:id", controller.update);
+    router.delete("/:id", controller.remove);
 
-export default router;
+    return router;
+}

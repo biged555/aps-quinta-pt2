@@ -1,5 +1,6 @@
 export interface Aluno {
-    id?: string;
+    id: string;
+    created_at?: string | null;
     planoId: string;
     nome: string;
     descricao: string;
@@ -9,3 +10,5 @@ export interface Aluno {
     valor_mensalidade: number;
     ativo: boolean;
 }
+
+export type AlunoInput = Omit<Aluno, "id" | "created_at">;
