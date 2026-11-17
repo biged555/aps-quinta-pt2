@@ -1,6 +1,6 @@
 # 🏋️ Academia System – API REST
 
-API REST para o gerenciamento de **planos** e **alunos** de uma academia, desenvolvida como Atividade Prática
+API REST para o gerenciamento de **planos**, **alunos** e **mensalidades** de uma academia, desenvolvida como Atividade Prática
 Supervisionada (APS) da disciplina de **Desenvolvimento Back-End** – 4º período de Engenharia de Software,
 Campus SJP.
 
@@ -81,7 +81,7 @@ garantindo que:
 
 ## 4. Entidades e relacionamento
 
-O projeto possui **duas entidades relacionadas**, ambas com **UUID como identificador**, gerado
+O projeto possui **três entidades relacionadas**, todas com **UUID como identificador**, gerado
 automaticamente pelo banco de dados (`gen_random_uuid()`).
 
 ### 4.1 Plano
@@ -340,7 +340,7 @@ Confirme com `git status` que o arquivo `.env` **não** aparece na lista de arqu
 ## 8. Banco de dados
 
 Os dados são persistidos em um banco **PostgreSQL** hospedado no **Supabase**. A estrutura é composta por
-duas tabelas: `planos` e `alunos`.
+três tabelas: `planos`, `alunos` e `mensalidades`. Veja a [seção 15](#15-evolução--branch-02-mensalidades) para a migração e os novos endpoints.
 
 ### 8.1 Criar o projeto no Supabase
 
@@ -808,5 +808,108 @@ conflitos de relacionamento e tratamento de erros. A configuração segue a
 normal da aplicação em `dist`, sem incluir testes. Para executar a compilação local com `.env`, use
 `node --env-file=.env dist/server.js`; `npm start` pressupõe variáveis já configuradas no ambiente.
 
-Mensalidades, testes de integração, relatório de cobertura e Swagger pertencem às próximas etapas.
-Esta branch não altera o schema nem executa operações no banco real.
+Na primeira branch, Mensalidades, integração, cobertura e Swagger ficaram para etapas posteriores.
+A segunda etapa está descrita abaixo; integração, cobertura e Swagger continuam previstos para as próximas branches.
+
+
+## 15. Evolução — branch `02-mensalidades`
+
+A segunda branch parte de `01-arquitetura-services` e acrescenta o controle de cobranças.
+O relacionamento completo é **Plano 1:N Aluno 1:N Mensalidade**.
+
+### Entidade Mensalidade
+
+| Campo | Tipo | Descrição |
+| --- | --- | --- |
+| `id` | uuid | Gerado pelo banco |
+| `alunoId` | uuid | FK para `alunos.id`, obrigatório |
+| `competencia` | date | Primeiro dia do mês cobrado, no formato `AAAA-MM-01` |
+| `valor` | numeric(10,2) | Valor histórico de 0 a 99999999.99, até duas casas decimais |
+| `data_vencimento` | date | Data válida no formato `AAAA-MM-DD` |
+| `data_pagamento` | date, aceita null | Obrigatória quando paga; null nos demais status |
+| `status` | text | `pendente`, `paga` ou `cancelada` |
+| `created_at` | timestamptz | Gerado pelo banco |
+
+### Preparar o banco — escolha um dos caminhos
+
+**Banco novo:** execute `schema.sql` no SQL Editor do Supabase. Se desejar dados de demonstração,
+execute `seed.sql` uma única vez: ele cria quatro planos, dois alunos e duas mensalidades pendentes
+para o mês atual, vinculadas aos UUIDs gerados. Executá-lo novamente cria novos registros.
+
+**Banco que já possui Planos e Alunos:** execute somente `migrations/002_mensalidades.sql`, uma única vez,
+antes de iniciar esta versão da API. A migração preserva os registros existentes e cria a tabela,
+as restrições, os índices, o trigger e o acesso da role de serviço. As mensalidades antigas não são
+criadas automaticamente; cadastre-as pela API. Não execute novamente o schema completo nem o seed
+apenas para atualizar esse banco.
+
+O schema novo já inclui a migração: não execute ambos no mesmo banco. Os scripts usam transação,
+portanto uma falha impede a aplicação parcial. O banco deve aceitar gravações; o erro `25006`
+(somente leitura) precisa ser resolvido no ambiente antes da execução.
+
+RLS permanece habilitado. A tabela nova concede CRUD à role `service_role`, utilizada pela chave
+secreta do servidor; não há acesso anônimo configurado por esta migração.
+
+### Regras de cobrança
+
+- Criar uma mensalidade exige aluno existente e ativo. Transferir uma cobrança também exige aluno ativo.
+- Um aluno possui no máximo uma mensalidade por competência, incluindo canceladas. É possível editar
+  uma cancelada, reabrindo-a como pendente, ou excluí-la antes de cadastrar outra para aquele mês.
+- O valor é informado explicitamente e não é recalculado ao mudar o plano ou a mensalidade do aluno.
+- Uma cobrança pendente pode ser paga ou cancelada. O PUT também permite corrigir os dados de uma
+  cobrança cancelada. Depois de paga, nenhuma alteração nem exclusão é permitida.
+- É permitido quitar uma cobrança já existente após a desativação do aluno, mantendo o vínculo.
+- Pagamento exige data real e não futura, usando o dia civil de `America/Sao_Paulo`.
+- Vencimento pode ser anterior ao dia atual: isso permite registrar cobranças atrasadas.
+- A exclusão de aluno com qualquer mensalidade vinculada retorna 409. A FK reforça essa proteção.
+- A chave única impede duplicidade concorrente. Um trigger impede atualizar/excluir mensalidades
+  pagas mesmo se o pagamento ocorrer entre a consulta do Service e a gravação.
+
+### Endpoints de Mensalidades
+
+| Método | Rota | Finalidade | Sucesso |
+| --- | --- | --- | --- |
+| POST | `/mensalidades` | Criar cobrança | 201 + registro |
+| GET | `/mensalidades` | Listar por competência decrescente, com desempate por ID | 200 + array |
+| GET | `/mensalidades/:id` | Consultar pelo UUID | 200 + registro |
+| PUT | `/mensalidades/:id` | Atualizar todos os campos editáveis, inclusive pagamento | 200 + registro |
+| DELETE | `/mensalidades/:id` | Excluir cobrança pendente/cancelada | 200 + mensagem |
+
+Erros: **400** para entradas inválidas ou aluno informado inexistente; **404** para mensalidade
+inexistente; **409** para competência ocupada, aluno inativo em nova cobrança/transferência ou
+alteração/exclusão de cobrança paga; **500** para falhas inesperadas de infraestrutura.
+
+Exemplo de POST (substitua `alunoId` pelo UUID de um aluno cadastrado):
+
+```json
+{
+  "alunoId": "22222222-2222-4222-8222-222222222222",
+  "competencia": "2026-11-01",
+  "valor": 129.90,
+  "data_vencimento": "2026-11-10",
+  "data_pagamento": null,
+  "status": "pendente"
+}
+```
+
+Para registrar pagamento, envie o mesmo objeto completo no PUT, alterando `status` para `paga`
+e `data_pagamento` para uma data válida, por exemplo `2026-11-17` se ela não for futura no momento
+da execução. Para cancelar, envie `status: "cancelada"` e `data_pagamento: null`.
+Não envie `id` ou `created_at`. Campos obrigatórios também são exigidos no PUT.
+
+Exemplo de conflito (409):
+
+```json
+{ "message": "Já existe uma mensalidade para este aluno e competência." }
+```
+
+### Arquivos e validação da etapa
+
+A entidade segue as mesmas camadas da primeira branch, com `MensalidadeService`,
+`MensalidadeRepository`, `MensalidadeController`, tipos e validador próprios.
+`AlunoService` recebe também o contrato de consulta de mensalidades para proteger a exclusão.
+
+Execute `npm run typecheck`, `npm run build` e `npm test`.
+Os testes unitários cobrem criação, pagamento, cancelamento, unicidade, aluno inativo,
+datas (inclusive virada de dia no fuso da academia), valores, exclusão e erros concorrentes.
+Continuam independentes do banco real. A suíte de integração e a medição de cobertura pertencem
+à terceira branch; Swagger e revisão final da documentação, à quarta.

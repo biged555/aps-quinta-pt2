@@ -3,9 +3,14 @@ import type { IPlanoRepository } from "../repositories/IPlanoRepository.js";
 import { AppError, RepositoryError } from "../errors/AppError.js";
 import { validarAluno } from "../validators/alunoValidator.js";
 import { validarId, validarKeyword } from "../validators/common.js";
+import type { IMensalidadeRepository } from "../repositories/IMensalidadeRepository.js";
 
 export default class AlunoService {
-    constructor(private readonly alunos: IAlunoRepository, private readonly planos: Pick<IPlanoRepository, "findById">) {}
+    constructor(
+        private readonly alunos: IAlunoRepository,
+        private readonly planos: Pick<IPlanoRepository, "findById">,
+        private readonly mensalidades: Pick<IMensalidadeRepository, "existsByAluno">,
+    ) {}
 
     getAll() { return this.alunos.findAll(); }
     getByKeyword(keyword: unknown) { return this.alunos.searchByKeyword(validarKeyword(keyword)); }
@@ -44,7 +49,19 @@ export default class AlunoService {
         } catch (error) { return this.tratarErroDeVinculo(error); }
     }
     async remove(id: unknown) {
-        const aluno = await this.alunos.remove(validarId(id));
-        if (!aluno) throw new AppError(404, "Aluno não encontrado.");
+        const uuid = validarId(id);
+        await this.getById(uuid);
+        if (await this.mensalidades.existsByAluno(uuid)) {
+            throw new AppError(409, "Não foi possível remover o aluno. Existem mensalidades vinculadas a ele.");
+        }
+        try {
+            const aluno = await this.alunos.remove(uuid);
+            if (!aluno) throw new AppError(404, "Aluno não encontrado.");
+        } catch (error) {
+            if (error instanceof RepositoryError && error.code === "23503") {
+                throw new AppError(409, "Não foi possível remover o aluno. Existem mensalidades vinculadas a ele.");
+            }
+            throw error;
+        }
     }
 }

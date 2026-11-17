@@ -29,7 +29,8 @@ function fixtures() {
         findByPlano: vi.fn<IAlunoRepository["findByPlano"]>().mockResolvedValue([]),
         existsByPlano: vi.fn<IAlunoRepository["existsByPlano"]>().mockResolvedValue(false),
     };
-    return { planos, alunos, planoService: new PlanoService(planos, alunos), alunoService: new AlunoService(alunos, planos) };
+    const mensalidades = { existsByAluno: vi.fn().mockResolvedValue(false) };
+    return { planos, alunos, mensalidades, planoService: new PlanoService(planos, alunos), alunoService: new AlunoService(alunos, planos, mensalidades) };
 }
 
 describe("PlanoService", () => {
@@ -76,6 +77,22 @@ describe("PlanoService", () => {
 });
 
 describe("AlunoService", () => {
+    it("impede exclusão de aluno com mensalidades", async () => {
+        const { mensalidades, alunos, alunoService } = fixtures();
+        mensalidades.existsByAluno.mockResolvedValue(true);
+        await expect(alunoService.remove(id)).rejects.toMatchObject({ status: 409 });
+        expect(alunos.remove).not.toHaveBeenCalled();
+    });
+    it("trata cobrança criada entre verificação e exclusão do aluno", async () => {
+        const { alunos, alunoService } = fixtures();
+        alunos.remove.mockRejectedValue(new RepositoryError("23503", "FK"));
+        await expect(alunoService.remove(id)).rejects.toMatchObject({ status: 409 });
+    });
+    it("exclui aluno sem mensalidades", async () => {
+        const { alunos, alunoService } = fixtures();
+        await alunoService.remove(id);
+        expect(alunos.remove).toHaveBeenCalledWith(id);
+    });
     beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date("2026-11-12T12:00:00Z")); });
     afterEach(() => { vi.useRealTimers(); });
     it("cria aluno com plano ativo e preserva valor negociado", async () => {
