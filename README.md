@@ -1,901 +1,371 @@
-# 🏋️ Academia System – API REST
+# Academia System — API REST
 
-API REST para o gerenciamento de **planos**, **alunos** e **mensalidades** de uma academia, desenvolvida como Atividade Prática
-Supervisionada (APS) da disciplina de **Desenvolvimento Back-End** – 4º período de Engenharia de Software,
-Campus SJP.
+API de gestão de **planos, alunos e mensalidades de uma academia**, desenvolvida para a disciplina
+Desenvolvimento Back-End, 4º período de Engenharia de Software, Campus SJP.
 
----
+O sistema organiza os planos disponíveis, os alunos vinculados e o histórico das cobranças mensais.
+Oferece CRUD das três entidades, regras de negócio, persistência em Supabase/PostgreSQL, testes
+unitários e de integração e documentação interativa Swagger/OpenAPI.
 
 ## Sumário
 
-1. [Nome e descrição do projeto](#1-nome-e-descrição-do-projeto)
-2. [Integrantes da equipe](#2-integrantes-da-equipe)
-3. [Tecnologias utilizadas](#3-tecnologias-utilizadas)
-4. [Entidades e relacionamento](#4-entidades-e-relacionamento)
-5. [Estrutura do projeto](#5-estrutura-do-projeto)
-6. [Configuração e execução](#6-configuração-e-execução)
-7. [Variáveis de ambiente](#7-variáveis-de-ambiente)
-8. [Banco de dados](#8-banco-de-dados)
-9. [Documentação dos endpoints](#9-documentação-dos-endpoints)
-10. [Exemplos de requisições](#10-exemplos-de-requisições)
-11. [Códigos de resposta HTTP utilizados](#11-códigos-de-resposta-http-utilizados)
-12. [Funcionalidades adicionais](#12-funcionalidades-adicionais)
-13. [Roteiro sugerido de demonstração](#13-roteiro-sugerido-de-demonstração)
+1. [Equipe e tecnologias](#1-equipe-e-tecnologias)
+2. [Entidades e relacionamentos](#2-entidades-e-relacionamentos)
+3. [Regras de negócio](#3-regras-de-negócio)
+4. [Arquitetura e estrutura](#4-arquitetura-e-estrutura)
+5. [Configuração e execução](#5-configuração-e-execução)
+6. [Banco de dados](#6-banco-de-dados)
+7. [Endpoints e respostas](#7-endpoints-e-respostas)
+8. [Exemplos de requisições](#8-exemplos-de-requisições)
+9. [Swagger e Postman](#9-swagger-e-postman)
+10. [Testes e cobertura](#10-testes-e-cobertura)
+11. [Demonstração e entrega](#11-demonstração-e-entrega)
+12. [Solução de problemas](#12-solução-de-problemas)
 
----
-
-## 1. Nome e descrição do projeto
-
-**Academia System – API REST**
-
-### Qual problema ela busca resolver
-
-Academias precisam controlar, de forma organizada, quais **planos** oferecem (Musculação, Cross Training,
-Funcional, etc.) e **quais alunos** estão matriculados em cada plano. Quando esse controle é feito em
-planilhas soltas ou em anotações manuais, as informações ficam duplicadas, desatualizadas e sem
-consistência entre os planos ofertados e as matrículas realizadas.
-
-### Domínio escolhido
-
-**Academia / Fitness** – gestão de planos de treino e de alunos matriculados.
-
-### Objetivo da API
-
-Disponibilizar uma API REST que permita **cadastrar, consultar, atualizar e remover** planos e alunos,
-garantindo que:
-
-- todo aluno esteja vinculado a um plano existente (**integridade referencial** garantida pela chave estrangeira);
-- não seja possível excluir um plano que ainda possua alunos vinculados;
-- os dados trafeguem em **JSON**, com validação de entrada e tratamento de erros padronizados;
-- a persistência seja feita em um banco **PostgreSQL** hospedado no **Supabase**.
-
----
-
-## 2. Integrantes da equipe
+## 1. Equipe e tecnologias
 
 | Integrante |
 | --- |
 | Eduardo Lopes |
 | Diogo Yudi |
 
----
-
-## 3. Tecnologias utilizadas
-
-| Tecnologia | Para que foi utilizada |
+| Tecnologia | Uso |
 | --- | --- |
-| **Node.js** | Ambiente de execução do JavaScript no servidor |
-| **TypeScript** | Linguagem utilizada no desenvolvimento, com tipagem estática |
-| **Express** | Framework responsável pelo servidor HTTP, rotas e middlewares |
-| **Supabase** | Backend como serviço (BaaS) usado como camada de acesso ao banco |
-| **PostgreSQL** | Banco de dados relacional hospedado pelo Supabase |
-| **@supabase/supabase-js** | Biblioteca oficial que conecta a aplicação ao Supabase |
-| **tsx** | Executa arquivos TypeScript diretamente, com recarregamento automático (`--watch`) |
-| **Postman** | Testes manuais dos endpoints (collection disponível no repositório) |
-| **Git / GitHub** | Versionamento e disponibilização do código-fonte |
+| Node.js 22+ e TypeScript | Execução, tipagem e compilação |
+| Express 5 | Rotas, JSON e tratamento de erros |
+| Supabase / PostgreSQL | Persistência, UUIDs e integridade referencial |
+| @supabase/supabase-js | Cliente de acesso à Data API |
+| Vitest e @vitest/coverage-v8 | Testes e medição de cobertura |
+| Supertest | Requisições HTTP nos testes de integração |
+| Docker Compose e PostgREST | Banco e Data API locais descartáveis para testes |
+| swagger-ui-express / OpenAPI 3.0.3 | Documentação interativa |
+| @apidevtools/swagger-parser | Validação automatizada do contrato OpenAPI |
+| tsx | Execução TypeScript em desenvolvimento |
+| Postman | Coleção de demonstração das operações |
+| Git | Histórico e branches de evolução |
 
-> Recursos nativos do Node.js utilizados: `--env-file` (carregamento do arquivo `.env`),
-> `--watch` (recarregamento automático em desenvolvimento) e `node:crypto` — usados nas aulas.
+## 2. Entidades e relacionamentos
 
----
-
-## 4. Entidades e relacionamento
-
-O projeto possui **três entidades relacionadas**, todas com **UUID como identificador**, gerado
-automaticamente pelo banco de dados (`gen_random_uuid()`).
-
-### 4.1 Plano
-
-Representa um plano oferecido pela academia.
-
-| Atributo | Tipo | Obrigatório | Descrição |
-| --- | --- | --- | --- |
-| `id` | uuid | gerado pelo banco | Identificador único do plano (chave primária) |
-| `nome` | text | sim | Nome do plano (ex.: "Musculação") |
-| `descricao` | text | sim | Descrição do plano |
-| `icon` | text | sim | Ícone/emoji que representa o plano (ex.: "💪") |
-| `ordem_exibicao` | int4 | sim | Ordem em que o plano é exibido na listagem |
-| `valor_mensal` | numeric | sim | Valor mensal do plano em reais |
-| `duracao_meses` | int4 | sim | Duração do plano em meses |
-| `ativo` | boolean | sim | Indica se o plano está ativo |
-| `created_at` | timestamptz | gerado pelo banco | Data/hora de criação do registro |
-
-### 4.2 Aluno
-
-Representa um aluno matriculado em um plano da academia.
-
-| Atributo | Tipo | Obrigatório | Descrição |
-| --- | --- | --- | --- |
-| `id` | uuid | gerado pelo banco | Identificador único do aluno (chave primária) |
-| `planoId` | uuid | sim | **Chave estrangeira** → `planos.id` |
-| `nome` | text | sim | Nome completo do aluno |
-| `descricao` | text | sim | Observações sobre o aluno (objetivo, nível, etc.) |
-| `email` | text | sim | E-mail do aluno |
-| `telefone` | text | sim | Telefone de contato |
-| `data_nascimento` | date | sim | Data de nascimento (formato `AAAA-MM-DD`) |
-| `valor_mensalidade` | numeric | sim | Valor pago pelo aluno (pode diferir do valor do plano, por desconto) |
-| `ativo` | boolean | sim | Indica se o aluno está ativo |
-| `created_at` | timestamptz | gerado pelo banco | Data/hora de criação do registro |
-
-### 4.3 Relacionamento
-
-> **Um Plano pode possuir vários Alunos e cada Aluno pertence a um único Plano.**
-
-- Trata-se de um relacionamento **1:N (um para muitos)**.
-- É implementado pela coluna `alunos.planoId`, que é uma **chave estrangeira (Foreign Key)** apontando
-  para `planos.id`.
-- Graças à chave estrangeira:
-  - não é possível cadastrar um aluno com um `planoId` inexistente (a API responde **400**);
-  - não é possível excluir um plano que ainda tenha alunos vinculados (a API responde **409**).
-
-```
-┌──────────────────────┐                  ┌────────────────────────────────┐
-│        planos        │                  │            alunos              │
-├──────────────────────┤                  ├────────────────────────────────┤
-│ id            (PK)   │───┐              │ id                      (PK)   │
-│ nome                 │   │              │ planoId                 (FK)   │
-│ descricao            │   └─────────────▶│ nome                           │
-│ icon                 │      1      N    │ descricao                      │
-│ ordem_exibicao       │                  │ email                          │
-│ valor_mensal         │                  │ telefone                       │
-│ duracao_meses        │                  │ data_nascimento                │
-│ ativo                │                  │ valor_mensalidade              │
-│ created_at           │                  │ ativo                          │
-└──────────────────────┘                  │ created_at                     │
-                                          └────────────────────────────────┘
+```mermaid
+erDiagram
+    PLANOS ||--o{ ALUNOS : possui
+    ALUNOS ||--o{ MENSALIDADES : possui
 ```
 
----
+Cada aluno pertence a um plano, e cada mensalidade pertence a um aluno. As três entidades usam UUID
+gerado pelo banco com `gen_random_uuid()`. `created_at` usa `now()` como valor padrão.
 
-## 5. Estrutura do projeto
+### Plano — tabela `planos`
 
-```
-academia_system/
-├── .vscode/
-│   └── launch.json              # Configuração de debug da API no VS Code
-├── src/
-│   ├── config/
-│   │   └── supabase.ts          # Cria o cliente Supabase usando as variáveis de ambiente
-│   ├── controller/
-│   │   ├── PlanoController.ts   # Validações + requisição/resposta dos planos
-│   │   └── AlunoController.ts   # Validações + requisição/resposta dos alunos
-│   ├── model/
-│   │   ├── Plano.ts             # Interface (modelo) do Plano
-│   │   └── Aluno.ts             # Interface (modelo) do Aluno
-│   ├── repositories/
-│   │   ├── PlanoRepository.ts   # CRUD dos planos no Supabase
-│   │   └── AlunoRepository.ts   # CRUD dos alunos no Supabase
-│   ├── routes/
-│   │   ├── planoRoutes.ts       # Rotas de /planos
-│   │   └── alunoRoutes.ts       # Rotas de /alunos
-│   ├── app.ts                   # Cria a aplicação Express e registra as rotas
-│   └── server.ts                # Inicia o servidor na porta configurada
-├── academia_system.postman_collection.json
-├── .env                         # Variáveis de ambiente reais (NÃO versionado)
-├── .env.example                 # Modelo das variáveis de ambiente (versionado)
-├── .gitignore
-├── package.json
-├── tsconfig.json
-└── README.md
-```
-
-### Responsabilidade de cada camada
-
-| Camada | Pasta | Responsabilidade |
+| Atributo | Tipo SQL | Configuração / finalidade |
 | --- | --- | --- |
-| **Model** | `src/model` | Define a **estrutura das entidades** (interfaces TypeScript com os atributos de cada tabela). |
-| **Repository** | `src/repositories` | Única camada que conversa com o **banco de dados (Supabase)**. Contém os métodos `findAll`, `findById`, `findByPlano`, `create`, `update`, `remove` e `searchByKeyword`. |
-| **Controller** | `src/controller` | Recebe a requisição, **valida os dados de entrada**, chama o Repository e devolve a **resposta HTTP** com o código adequado. Não conhece SQL nem tabelas. |
-| **Routes** | `src/routes` | Define os **endpoints** (método HTTP + caminho) e delega cada um para a função correspondente do Controller. |
-| **App/Server** | `src/app.ts` e `src/server.ts` | `app.ts` monta a aplicação Express (middleware `express.json`, rotas e rota 404); `server.ts` apenas sobe o servidor. |
+| `id` | uuid | PK, gerado automaticamente |
+| `nome`, `descricao`, `icon` | text | Obrigatórios; nome, descrição e ícone do plano |
+| `ordem_exibicao` | int4 | Obrigatório, padrão 0; ordenação da listagem |
+| `valor_mensal` | numeric | Obrigatório, padrão 0; preço do plano |
+| `duracao_meses` | int4 | Obrigatório, padrão 1 |
+| `ativo` | bool | Obrigatório, padrão true |
+| `created_at` | timestamptz | Padrão now(), aceita null no schema |
 
-**Fluxo de uma requisição:**
+### Aluno — tabela `alunos`
 
+| Atributo | Tipo SQL | Configuração / finalidade |
+| --- | --- | --- |
+| `id` | uuid | PK, gerado automaticamente |
+| `planoId` | uuid | Obrigatório, FK para `planos.id` |
+| `nome`, `descricao`, `email`, `telefone` | text | Obrigatórios |
+| `data_nascimento` | date | Obrigatória |
+| `valor_mensalidade` | numeric | Obrigatório, padrão 0; valor negociado com o aluno |
+| `ativo` | bool | Obrigatório, padrão true |
+| `created_at` | timestamptz | Padrão now(), aceita null no schema |
+
+### Mensalidade — tabela `mensalidades`
+
+| Atributo | Tipo SQL | Configuração / finalidade |
+| --- | --- | --- |
+| `id` | uuid | PK, gerado automaticamente |
+| `alunoId` | uuid | Obrigatório, FK para `alunos.id` |
+| `competencia` | date | Obrigatória; primeiro dia do mês cobrado |
+| `valor` | numeric(10,2) | Obrigatório; valor histórico da cobrança |
+| `data_vencimento` | date | Obrigatória |
+| `data_pagamento` | date | Aceita null; obrigatória quando paga |
+| `status` | text | Obrigatório, padrão pendente; pendente, paga ou cancelada |
+| `created_at` | timestamptz | Obrigatório, padrão now() |
+
+`competencia: "2026-11-01"` representa novembro de 2026, independentemente do dia de vencimento.
+As colunas `planoId` e `alunoId` preservam maiúsculas e são escritas entre aspas no SQL.
+
+## 3. Regras de negócio
+
+- Planos exigem valor não negativo, duração inteira de pelo menos um mês e ordem inteira não negativa.
+- Não é permitido excluir plano com alunos vinculados.
+- Cadastro ou transferência de aluno exige plano existente e ativo. É permitido editar um aluno
+  mantendo seu plano atual caso esse plano tenha sido desativado.
+- Alunos exigem e-mail, telefone e nascimento válidos; nascimento futuro e valores negativos são rejeitados.
+- O valor negociado com o aluno pode diferir do preço do plano.
+- Criar mensalidade ou transferi-la para outro aluno exige aluno existente e ativo.
+- Cada aluno pode ter no máximo uma mensalidade por competência, inclusive cancelada. Uma cancelada
+  pode ser reaberta ou excluída para reutilizar a competência.
+- O valor da cobrança é informado explicitamente, entre 0 e 99999999.99 com até duas casas decimais.
+  Alterar preços no plano ou aluno não recalcula cobranças anteriores.
+- Pendente/cancelada pode ser corrigida, paga ou cancelada. Paga não pode ser alterada nem excluída.
+- Pagamento exige data real e não futura, considerando `America/Sao_Paulo`; pendente/cancelada exige
+  `data_pagamento: null`. Vencimento passado é permitido para cobranças atrasadas.
+- É permitido quitar cobrança antiga de aluno inativo, mantendo o vínculo existente.
+- Não é permitido excluir aluno com qualquer mensalidade vinculada.
+- POST e PUT rejeitam `id` e `created_at`; outros campos extras são ignorados. PUT exige todos os
+  campos editáveis, mesmo os que possuem valor padrão no banco.
+
+Services verificam essas regras. FKs, unicidade, CHECKs e o trigger de mensalidade paga reforçam
+as garantias no banco, inclusive contra operações concorrentes. A exigência de aluno ativo e a
+proibição de pagamento futuro são verificadas na aplicação; SQL direto não passa pelos Services.
+
+## 4. Arquitetura e estrutura
+
+Fluxo: `Routes → Controllers → Services → Repositories → Supabase/PostgreSQL`.
+
+```text
+src/
+├── config/             # Cliente Supabase e leitura das variáveis
+├── controller/         # Classes que recebem HTTP e respondem JSON
+├── docs/               # Contrato OpenAPI
+├── errors/             # AppError e RepositoryError
+├── middlewares/        # Tratamento central de erros
+├── model/              # Entidades e tipos de entrada
+├── repositories/       # Interfaces e classes de persistência
+├── routes/             # Associação de caminhos HTTP aos Controllers
+├── services/           # Classes com regras de negócio
+├── validators/         # Validação dos dados recebidos
+├── tests/
+│   ├── unit/           # Regras isoladas, erros e validade do OpenAPI
+│   ├── integration/    # HTTP, persistência e restrições reais
+│   └── helpers/        # Montagem da aplicação e limpeza do banco de testes
+├── app.ts              # Fábrica createApp com dependências injetadas
+└── server.ts           # Composição das dependências reais e listen
+migrations/             # Atualização do banco da primeira etapa
+scripts/                # Runner de testes e exportação de cobertura
+test-infra/             # PostgreSQL/PostgREST descartáveis via Compose
+reports/                # Relatórios versionados de cobertura
+schema.sql              # Estrutura completa para banco novo
+seed.sql                # Dados opcionais de demonstração
 ```
-Cliente (Postman/navegador)
-        │  HTTP + JSON
-        ▼
-server.ts → app.ts → routes/ → controller/  ── (validação) ──▶ repositories/ ──▶ Supabase/PostgreSQL
-                                    ▲                                        │
-                                    └──────────── JSON + status HTTP ◀────────┘
-```
 
----
+Controllers, Services e Repositories são classes com responsabilidades distintas. Services recebem
+interfaces de Repositories pelo construtor e guardam dependências privadas: isso aplica encapsulamento
+e injeção de dependências e permite mocks nos testes unitários. Models descrevem dados e não substituem
+a validação do JSON em tempo de execução.
 
-## 6. Configuração e execução
+`createApp` não carrega credenciais nem abre uma porta fixa. `server.ts` conecta os Repositories reais
+e inicia a API. O middleware central trata `AppError` com seu status, e falhas inesperadas como 500.
+Erros de ausência de registro são separados de falhas de infraestrutura.
 
-### Pré-requisitos
+## 5. Configuração e execução
 
-- [Node.js](https://nodejs.org/) **20.6 ou superior** — recomendamos a versão **22 ou superior**
-  (a biblioteca do Supabase passou a exigir o WebSocket nativo do Node.js 22+; veja
-  [Solução de problemas](#solução-de-problemas))
-- npm (já vem com o Node.js)
-- Uma conta gratuita no [Supabase](https://supabase.com/) com o projeto de banco criado (veja a [seção 8](#8-banco-de-dados))
-- (Opcional) [Postman](https://www.postman.com/downloads/) para testar os endpoints
+Pré-requisitos: Node.js 22+, npm, Git e um projeto Supabase com banco que aceite gravações.
+Docker Desktop com containers Linux e Compose v2 é necessário somente para integração/cobertura.
 
-### 1) Clonar o repositório
+### Clonar e instalar
+
+Enquanto as etapas estiverem em branches, a versão completa está em `04-documentacao-entrega`:
 
 ```bash
-git clone https://github.com/<usuario>/academia_system.git
-cd academia_system
+git clone --branch 04-documentacao-entrega https://github.com/biged555/aps-quinta-pt2.git
+cd aps-quinta-pt2
+npm ci
 ```
 
-### 2) Instalar as dependências
+A branch precisa estar publicada no remoto. Após a integração da versão final à `main`, também será
+possível clonar a branch padrão. `npm ci` usa as versões registradas no `package-lock.json`.
 
-```bash
-npm install
+### Configurar variáveis
+
+No PowerShell:
+
+```powershell
+Copy-Item .env.example .env
 ```
 
-### 3) Configurar as variáveis de ambiente
+No Linux/macOS, use `cp .env.example .env`. Preencha o arquivo com os dados do seu projeto:
 
-Copie o arquivo de exemplo e preencha com as credenciais do seu projeto Supabase
-(veja a [seção 7](#7-variáveis-de-ambiente)):
+| Variável | Obrigatória | Uso |
+| --- | --- | --- |
+| `SUPABASE_URL` | Sim | URL do projeto Supabase |
+| `SUPABASE_SECRET_KEY` | Sim | Chave secreta com permissão de serviço, somente no servidor |
+| `PORT` | Não | Porta da API; padrão 3000 |
 
-```bash
-cp .env.example .env
-```
+O [.env.example](.env.example) contém somente exemplos. `.env`, `.env.test` e `.env.test.local` estão
+ignorados pelo Git. Nenhuma chave deve ser colocada no Swagger ou no Postman. Esta API acadêmica
+não implementa autenticação de usuários; a chave de serviço é usada apenas na conexão servidor/banco.
 
-`.env`:
+### Preparar o banco e iniciar
 
-```env
-SUPABASE_URL=https://seu-projeto.supabase.co
-SUPABASE_SECRET_KEY=sua_chave_secreta_aqui
-PORT=3000
-```
-
-> ⚠️ O arquivo `.env` está no `.gitignore` e **não deve** ser enviado ao repositório.
-
-### 4) Criar as tabelas no Supabase
-
-Siga o passo a passo do painel do Supabase descrito na [seção 8](#8-banco-de-dados).
-
-### 5) Iniciar a aplicação
+Execute os scripts conforme a seção 6. Depois:
 
 ```bash
 npm run dev
 ```
 
-O servidor carrega as variáveis do `.env` automaticamente e reinicia a cada alteração no código:
+Acesse `http://localhost:3000/` e `http://localhost:3000/api-docs/` (ajuste a porta se necessário).
+Para compilar e executar localmente carregando `.env`:
 
+```bash
+npm run typecheck
+npm run build
+npm run start:local
 ```
-Servidor executando em http://localhost:3000
-```
 
-### Outros comandos disponíveis
+`npm start` também executa a versão compilada, mas pressupõe variáveis já definidas pelo ambiente
+ou pela plataforma de hospedagem. `npm run dev` e `npm run start:local` carregam `.env` explicitamente.
 
-| Comando | O que faz |
+## 6. Banco de dados
+
+Escolha somente o caminho correspondente ao seu ambiente:
+
+| Situação | Ação no SQL Editor do Supabase |
 | --- | --- |
-| `npm run dev` | Inicia a API em modo desenvolvimento (`--watch` + `.env`) |
-| `npm run build` | Compila o TypeScript para a pasta `dist/` |
-| `npm start` | Executa a versão compilada (`dist/server.js`) |
-| `npm test` | Script padrão do npm (não há testes automatizados nesta entrega) |
+| Banco novo, sem tabelas | Executar [schema.sql](schema.sql) |
+| Já existem Planos e Alunos da primeira etapa | Executar [migrations/002_mensalidades.sql](migrations/002_mensalidades.sql) uma vez |
+| Mensalidades já foi migrada | Nenhuma nova migração é exigida pelas etapas 3 e 4 |
+| Deseja exemplos em banco preparado | Executar [seed.sql](seed.sql) uma vez, opcionalmente |
 
-### Testando rapidamente
+O schema completo já contém a evolução de Mensalidades. Não execute schema e migração em sequência
+no mesmo banco. A migração preserva os registros antigos e não cria cobranças automaticamente.
+Os scripts usam transação para evitar aplicação parcial.
 
-```bash
-curl http://localhost:3000/
+O seed cria quatro planos, dois alunos e duas mensalidades pendentes do mês atual, com vencimento
+no dia 10. Ele utiliza UUIDs retornados pelas inserções e não é idempotente: outra execução cria
+novos registros. Não é necessário executá-lo para rodar os testes.
+
+As três tabelas usam RLS. O acesso da API depende da role de serviço e dos grants das tabelas.
+O schema concede explicitamente CRUD de Mensalidades à `service_role`; para Planos e Alunos,
+confira os grants do projeto se a Data API retornar `permission denied`. Nesse caso, execute:
+
+```sql
+GRANT USAGE ON SCHEMA public TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON public.planos, public.alunos, public.mensalidades TO service_role;
 ```
 
-Resposta esperada (**200**):
+Não é necessário conceder acesso a `anon` ou `authenticated` para esta arquitetura.
 
-```json
-{
-  "message": "Academia System - API",
-  "version": "1.0.0"
-}
-```
+## 7. Endpoints e respostas
 
-Para testar todos os endpoints, importe no Postman o arquivo
-`academia_system.postman_collection.json` (Collection → Import):
-
-1. Execute **POST - Criar Plano** e copie o `id` retornado;
-2. Cole esse valor na variável **`planoId`** da collection (aba *Variables*);
-3. Execute **POST - Criar Aluno** e copie o `id` retornado para a variável **`alunoId`**;
-4. Execute os demais endpoints normalmente.
-
-### Solução de problemas
-
-| Mensagem / sintoma | Causa | Solução |
-| --- | --- | --- |
-| `Node.js detected but native WebSocket not found` | Versão do Node.js anterior à 22, sem `WebSocket` global | O projeto já possui compatibilidade para Node.js 20/21 (veja o comentário em `src/config/supabase.ts`). Recomenda-se atualizar para o **Node.js 22+**, que é o requisito da biblioteca do Supabase. |
-| `As variáveis de ambiente SUPABASE_URL e SUPABASE_SECRET_KEY não foram configuradas` | Arquivo `.env` ausente ou incompleto | Crie o arquivo com `cp .env.example .env` e preencha com os dados do seu projeto Supabase. |
-| `EADDRINUSE: address already in use :::3000` | Já existe uma aplicação usando a porta | Encerre o outro processo ou altere a porta no `.env` (`PORT=3001`). |
-| Todas as rotas de `/planos` e `/alunos` respondem **500** | URL ou chave do Supabase incorretas, sem internet ou tabelas inexistentes | Confira `SUPABASE_URL` e `SUPABASE_SECRET_KEY` no painel do Supabase e verifique se as tabelas foram criadas (seção 8). O console do servidor mostra a causa exata do erro. |
-| `Erro: relation "public.planos" does not exist` (no terminal) | As tabelas ainda não foram criadas no Supabase | Siga o passo a passo da [seção 8](#8-banco-de-dados). |
-
-### Publicação do repositório Git
-
-```bash
-git init
-git add .
-git commit -m "feat: API REST de planos e alunos da academia com Node.js, TypeScript e Supabase"
-git branch -M main
-git remote add origin https://github.com/<usuario>/academia_system.git
-git push -u origin main
-```
-
-Confirme com `git status` que o arquivo `.env` **não** aparece na lista de arquivos versionados
-(ele é ignorado pelo `.gitignore`).
-
----
-
-## 7. Variáveis de ambiente
-
-| Variável | Obrigatória | Descrição | Exemplo |
-| --- | --- | --- | --- |
-| `SUPABASE_URL` | sim | URL do projeto Supabase (Dashboard → *Project Settings* → *Data API* → *Project URL*) | `https://abcdefghijkl.supabase.co` |
-| `SUPABASE_SECRET_KEY` | sim | Chave secreta do Supabase (Dashboard → *Project Settings* → *API Keys* → *Secret key*). Usada **somente no servidor**. | `sua_chave_secreta_aqui` |
-| `PORT` | não | Porta em que a API é executada. Se não for informada, a aplicação usa `3000`. | `3000` |
-
-### Segurança das credenciais
-
-- O arquivo `.env` contém dados sensíveis e está listado no `.gitignore`, portanto **não é versionado**.
-- O repositório disponibiliza apenas o arquivo **`.env.example`**, com os **nomes** das variáveis e
-  valores de exemplo — sem nenhuma credencial real.
-- A chave secreta fica restrita ao servidor: ela nunca é enviada ao cliente nas respostas da API.
-- Recomenda-se **rotacionar a chave** no painel do Supabase caso ela seja exposta acidentalmente.
-
----
-
-## 8. Banco de dados
-
-Os dados são persistidos em um banco **PostgreSQL** hospedado no **Supabase**. A estrutura é composta por
-três tabelas: `planos`, `alunos` e `mensalidades`. Veja a [seção 15](#15-evolução--branch-02-mensalidades) para a migração e os novos endpoints.
-
-### 8.1 Criar o projeto no Supabase
-
-1. Acesse <https://supabase.com> e faça login;
-2. Clique em **New project**, escolha organização, nome, senha do banco e região — aguarde a criação;
-3. No menu lateral, abra **Table Editor**;
-4. Em **Project Settings → Data API**, copie a **Project URL**;
-5. Em **Project Settings → API Keys**, copie a **Secret key**;
-6. Cole os dois valores no arquivo `.env` do projeto (`SUPABASE_URL` e `SUPABASE_SECRET_KEY`).
-
-### 8.2 Tabela `planos`
-
-No **Table Editor**, clique em **New table** e informe o nome `planos`. O Supabase sugere
-automaticamente uma coluna `id` do tipo `int8` — **remova-a** e crie a coluna `id` do tipo `uuid`,
-porque o projeto utiliza **UUID** como identificador. As demais colunas são:
-
-| Nome da coluna | Tipo | Configuração |
-| --- | --- | --- |
-| `id` | `uuid` | **Primary Key** marcada; *Default value*: `gen_random_uuid()` |
-| `nome` | `text` | *Is Nullable* desmarcado |
-| `descricao` | `text` | *Is Nullable* desmarcado |
-| `icon` | `text` | *Is Nullable* desmarcado |
-| `ordem_exibicao` | `int4` | *Is Nullable* desmarcado; *Default value*: `0` |
-| `valor_mensal` | `numeric` | *Is Nullable* desmarcado; *Default value*: `0` |
-| `duracao_meses` | `int4` | *Is Nullable* desmarcado; *Default value*: `1` |
-| `ativo` | `bool` | *Is Nullable* desmarcado; *Default value*: `true` |
-| `created_at` | `timestamptz` | *Default value*: `now()` |
-
-### 8.3 Tabela `alunos`
-
-Crie uma segunda tabela com o nome `alunos`:
-
-| Nome da coluna | Tipo | Configuração |
-| --- | --- | --- |
-| `id` | `uuid` | **Primary Key** marcada; *Default value*: `gen_random_uuid()` |
-| `planoId` | `uuid` | *Is Nullable* desmarcado; **Foreign Key** → `planos.id` (veja abaixo) |
-| `nome` | `text` | *Is Nullable* desmarcado |
-| `descricao` | `text` | *Is Nullable* desmarcado |
-| `email` | `text` | *Is Nullable* desmarcado |
-| `telefone` | `text` | *Is Nullable* desmarcado |
-| `data_nascimento` | `date` | *Is Nullable* desmarcado |
-| `valor_mensalidade` | `numeric` | *Is Nullable* desmarcado; *Default value*: `0` |
-| `ativo` | `bool` | *Is Nullable* desmarcado; *Default value*: `true` |
-| `created_at` | `timestamptz` | *Default value*: `now()` |
-
-**Criando a chave estrangeira:** ao editar a coluna `planoId`, use a opção **Add foreign key relation**
-(*Foreign key relation* → tabela `planos` → coluna `id`). O Supabase cria a constraint
-`alunos_planoId_fkey`, que é exatamente o relacionamento 1:N descrito na [seção 4](#4-entidades-e-relacionamento).
-
-> 💡 **Atenção à grafia do nome `planoId`:** o PostgreSQL diferencia maiúsculas de minúsculas quando o
-> nome é criado entre aspas e o Supabase preserva a grafia digitada. Por isso, crie a coluna exatamente
-> como `planoId` — é esse o nome usado pelo código da aplicação.
-
-> 🔐 **Row Level Security (RLS):** pode permanecer habilitado ou desabilitado. A API acessa o banco
-> **somente pelo servidor**, utilizando a *Secret key*, que tem permissão de serviço e não é bloqueada
-> pelo RLS. Nenhuma chave é exposta ao cliente.
-
-### 8.4 Dados de exemplo (opcional, para demonstração)
-
-O `id` é gerado automaticamente pelo banco. Se quiser popular as tabelas, use o **Table Editor → Insert row**
-(ou os endpoints `POST` da API). Exemplos:
-
-**`planos`**
-
-| nome | descricao | icon | ordem_exibicao | valor_mensal | duracao_meses | ativo |
-| --- | --- | --- | --- | --- | --- | --- |
-| Musculação | Treino de força com pesos livres e máquinas. | 💪 | 1 | 129.90 | 12 | true |
-| Cross Training | Treino funcional de alta intensidade. | 🏋️ | 2 | 189.90 | 6 | true |
-| Funcional | Aulas em grupo com foco em condicionamento. | 🤸 | 3 | 149.90 | 6 | true |
-| Natação | Aulas de natação para adultos. | 🏊 | 4 | 219.90 | 12 | false |
-
-**`alunos`** (o campo `planoId` deve receber o `id` de um plano já cadastrado)
-
-| nome | descricao | email | telefone | data_nascimento | valor_mensalidade | ativo | planoId |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Eduardo Lopes | Aluno iniciante, foco em hipertrofia. | eduardo.lopes@email.com | (41) 99999-1111 | 2003-05-14 | 129.90 | true | *id de "Musculação"* |
-| Diogo Yudi | Aluno intermediário, foco em condicionamento. | diogo.yudi@email.com | (41) 98888-2222 | 2002-11-02 | 189.90 | true | *id de "Cross Training"* |
-
-### 8.5 Como a aplicação acessa o banco
-
-O arquivo `src/config/supabase.ts` cria o cliente com as variáveis de ambiente (e valida se elas
-foram configuradas):
-
-```ts
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
-
-if (!supabaseUrl || !supabaseSecretKey) {
-    throw new Error(
-        "As variáveis de ambiente SUPABASE_URL e SUPABASE_SECRET_KEY não foram configuradas. " +
-        "Verifique o arquivo .env (use o .env.example como modelo)."
-    );
-}
-
-const supabase = createClient(
-    supabaseUrl,
-    supabaseSecretKey,
-    compatibilidadeComNodeAntigo,
-);
-
-export default supabase;
-```
-
-Cada consulta é montada nos Repositories — por exemplo, a busca dos planos ordenados:
-
-```ts
-const { data, error } = await supabase
-    .from("planos")
-    .select("*")
-    .order("ordem_exibicao", { ascending: true });
-```
-
----
-
-## 9. Documentação dos endpoints
-
-**Base URL:** `http://localhost:3000`
-
-### 9.1 Endpoint raiz
-
-| Método | Endpoint | Descrição | Corpo da requisição |
-| --- | --- | --- | --- |
-| GET | `/` | Retorna o nome e a versão da API (verificação de disponibilidade) | não |
-
-### 9.2 Planos
-
-| Método | Endpoint | Descrição | Corpo da requisição |
-| --- | --- | --- | --- |
-| GET | `/planos` | Lista todos os planos, ordenados por `ordem_exibicao` | não |
-| GET | `/planos/:id` | Consulta um plano pelo ID (UUID) | não |
-| GET | `/planos/search?keyword=<termo>` | Pesquisa planos por palavra-chave em `nome` e `descricao` | não |
-| POST | `/planos` | Cadastra um novo plano | [JSON de exemplo](#101-criar-plano-post-planos) |
-| PUT | `/planos/:id` | Atualiza um plano | [JSON de exemplo](#102-atualizar-plano-put-planosid) |
-| DELETE | `/planos/:id` | Remove um plano | não |
-
-**Dados necessários no POST/PUT de Plano:** `nome` (texto), `descricao` (texto), `icon` (texto),
-`ordem_exibicao` (inteiro ≥ 0), `valor_mensal` (número ≥ 0), `duracao_meses` (inteiro ≥ 1),
-`ativo` (booleano).
-
-### 9.3 Alunos
-
-| Método | Endpoint | Descrição | Corpo da requisição |
-| --- | --- | --- | --- |
-| GET | `/alunos` | Lista todos os alunos, ordenados por `nome` | não |
-| GET | `/alunos/:id` | Consulta um aluno pelo ID (UUID) | não |
-| GET | `/alunos/plano/:planoId` | Lista os alunos de um plano específico (relacionamento) | não |
-| GET | `/alunos/search?keyword=<termo>` | Pesquisa alunos por palavra-chave em `nome` e `email` | não |
-| POST | `/alunos` | Cadastra um novo aluno | [JSON de exemplo](#103-criar-aluno-post-alunos) |
-| PUT | `/alunos/:id` | Atualiza um aluno | [JSON de exemplo](#104-atualizar-aluno-put-alunosid) |
-| DELETE | `/alunos/:id` | Remove um aluno | não |
-
-**Dados necessários no POST/PUT de Aluno:** `planoId` (UUID de um plano existente), `nome` (texto),
-`descricao` (texto), `email` (e-mail válido), `telefone` (texto), `data_nascimento` (data no formato
-`AAAA-MM-DD`, não pode ser futura), `valor_mensalidade` (número ≥ 0), `ativo` (booleano).
-
-> O campo `id` **não** é enviado nas requisições: ele é gerado automaticamente pelo banco de dados.
-
-### 9.4 Resumo geral das rotas (CRUD)
+Base local: `http://localhost:3000`.
 
 | Método | Endpoint | Finalidade |
 | --- | --- | --- |
-| GET | `/planos` | Listar planos |
-| GET | `/planos/:id` | Consultar plano por ID |
+| GET | `/` | Nome e versão da API |
+| GET | `/planos` | Listar por ordem de exibição |
+| GET | `/planos/:id` | Consultar plano |
+| GET | `/planos/search?keyword=muscula` | Pesquisar nome e descrição |
 | POST | `/planos` | Criar plano |
-| PUT | `/planos/:id` | Atualizar plano |
-| DELETE | `/planos/:id` | Excluir plano |
-| GET | `/alunos` | Listar alunos |
-| GET | `/alunos/:id` | Consultar aluno por ID |
+| PUT | `/planos/:id` | Atualizar plano completo |
+| DELETE | `/planos/:id` | Excluir plano sem alunos |
+| GET | `/alunos` | Listar por nome |
+| GET | `/alunos/:id` | Consultar aluno |
+| GET | `/alunos/search?keyword=eduardo` | Pesquisar nome e e-mail |
+| GET | `/alunos/plano/:planoId` | Filtrar alunos de um plano |
 | POST | `/alunos` | Criar aluno |
-| PUT | `/alunos/:id` | Atualizar aluno |
-| DELETE | `/alunos/:id` | Excluir aluno |
+| PUT | `/alunos/:id` | Atualizar aluno completo |
+| DELETE | `/alunos/:id` | Excluir aluno sem mensalidades |
+| GET | `/mensalidades` | Listar por competência decrescente, desempate por ID |
+| GET | `/mensalidades/:id` | Consultar cobrança |
+| POST | `/mensalidades` | Criar cobrança |
+| PUT | `/mensalidades/:id` | Atualizar cobrança, registrar pagamento ou cancelar |
+| DELETE | `/mensalidades/:id` | Excluir cobrança pendente/cancelada |
+| GET | `/api-docs/` | Swagger UI |
+| GET | `/openapi.json` | Contrato OpenAPI em JSON |
 
----
+Pesquisas são parciais, sem diferenciar maiúsculas. `keyword` não pode ser vazio nem conter vírgulas,
+parênteses, aspas, barra invertida ou curingas `%`/`*`. Listas sem resultados retornam `[]` com 200.
+O filtro por plano com UUID válido sem alunos retorna `[]`, inclusive se o plano não existir.
 
-## 10. Exemplos de requisições
-
-### 10.1 Criar Plano — `POST /planos`
-
-Corpo da requisição:
-
-```json
-{
-  "nome": "Musculação",
-  "descricao": "Treino de força com pesos livres e máquinas.",
-  "icon": "💪",
-  "ordem_exibicao": 1,
-  "valor_mensal": 129.9,
-  "duracao_meses": 12,
-  "ativo": true
-}
-```
-
-Resposta (**201 Created**):
-
-```json
-{
-  "id": "f358a43b-43af-4387-a433-c376a385ca27",
-  "nome": "Musculação",
-  "descricao": "Treino de força com pesos livres e máquinas.",
-  "icon": "💪",
-  "ordem_exibicao": 1,
-  "valor_mensal": 129.9,
-  "duracao_meses": 12,
-  "ativo": true
-}
-```
-
-### 10.2 Atualizar Plano — `PUT /planos/:id`
-
-Corpo da requisição (envia o recurso completo):
-
-```json
-{
-  "nome": "Musculação Premium",
-  "descricao": "Treino de força com acompanhamento de personal trainer.",
-  "icon": "💪",
-  "ordem_exibicao": 1,
-  "valor_mensal": 199.9,
-  "duracao_meses": 12,
-  "ativo": true
-}
-```
-
-Resposta (**200 OK**): o plano atualizado em JSON.
-
-### 10.3 Criar Aluno — `POST /alunos`
-
-Corpo da requisição (o `planoId` deve ser o UUID de um plano já cadastrado):
-
-```json
-{
-  "planoId": "f358a43b-43af-4387-a433-c376a385ca27",
-  "nome": "Eduardo Lopes",
-  "descricao": "Aluno iniciante, com foco em hipertrofia.",
-  "email": "eduardo.lopes@email.com",
-  "telefone": "(41) 99999-1111",
-  "data_nascimento": "2003-05-14",
-  "valor_mensalidade": 129.9,
-  "ativo": true
-}
-```
-
-Resposta (**201 Created**):
-
-```json
-{
-  "id": "c7e5fd29-539e-43a4-bdcb-ec36c18ab465",
-  "planoId": "f358a43b-43af-4387-a433-c376a385ca27",
-  "nome": "Eduardo Lopes",
-  "descricao": "Aluno iniciante, com foco em hipertrofia.",
-  "email": "eduardo.lopes@email.com",
-  "telefone": "(41) 99999-1111",
-  "data_nascimento": "2003-05-14",
-  "valor_mensalidade": 129.9,
-  "ativo": true
-}
-```
-
-### 10.4 Atualizar Aluno — `PUT /alunos/:id`
-
-```json
-{
-  "planoId": "f358a43b-43af-4387-a433-c376a385ca27",
-  "nome": "Eduardo Lopes",
-  "descricao": "Aluno intermediário, com foco em hipertrofia.",
-  "email": "eduardo.lopes@email.com",
-  "telefone": "(41) 99999-1111",
-  "data_nascimento": "2003-05-14",
-  "valor_mensalidade": 199.9,
-  "ativo": true
-}
-```
-
-Resposta (**200 OK**): o aluno atualizado em JSON.
-
-### 10.5 Exemplo de erro de validação — `POST /alunos`
-
-Requisição com dados inválidos:
-
-```json
-{
-  "planoId": "abc",
-  "nome": "",
-  "email": "email-invalido",
-  "data_nascimento": "14/05/2003",
-  "valor_mensalidade": -5,
-  "ativo": "sim"
-}
-```
-
-Resposta (**400 Bad Request**) — todos os problemas encontrados são retornados de uma só vez:
-
-```json
-{
-  "message": "Dados inválidos.",
-  "erros": [
-    "O campo 'planoId' é obrigatório e deve conter o UUID de um plano cadastrado.",
-    "O campo 'nome' é obrigatório e deve ser um texto.",
-    "O campo 'descricao' é obrigatório e deve ser um texto.",
-    "O campo 'email' é obrigatório e deve conter um e-mail válido.",
-    "O campo 'telefone' é obrigatório e deve conter um telefone válido.",
-    "O campo 'data_nascimento' é obrigatório e deve estar no formato AAAA-MM-DD.",
-    "O campo 'valor_mensalidade' é obrigatório e deve ser um número maior ou igual a zero.",
-    "O campo 'ativo' é obrigatório e deve ser um booleano (true ou false)."
-  ]
-}
-```
-
-### 10.6 Exemplos de resposta de erro
-
-**Aluno não encontrado — `GET /alunos/:id` (404 Not Found):**
-
-```json
-{
-  "message": "Aluno não encontrado."
-}
-```
-
-**Excluir plano com alunos vinculados — `DELETE /planos/:id` (409 Conflict):**
-
-```json
-{
-  "message": "Não foi possível remover o plano. Existem alunos vinculados a ele."
-}
-```
-
-**Pesquisa sem palavra-chave — `GET /planos/search` (400 Bad Request):**
-
-```json
-{
-  "message": "Palavra-chave não informada."
-}
-```
-
-**Rota inexistente — `GET /rota-qualquer` (404 Not Found):**
-
-```json
-{
-  "message": "Rota não encontrada."
-}
-```
-
----
-
-## 11. Códigos de resposta HTTP utilizados
-
-| Código | Quando é retornado |
+| Status | Quando ocorre |
 | --- | --- |
-| **200 OK** | Consultas (`GET`) e atualizações (`PUT`) realizadas com sucesso; exclusão (`DELETE`) concluída |
-| **201 Created** | Registro criado com sucesso (`POST`) |
-| **400 Bad Request** | Dados inválidos na requisição (campos obrigatórios ausentes, tipos errados, e-mail/data inválidos, `planoId` inexistente) ou palavra-chave não informada na pesquisa |
-| **404 Not Found** | Registro inexistente para o `id` informado, ID não informado ou rota não encontrada |
-| **409 Conflict** | Tentativa de excluir um plano que ainda possui alunos vinculados (violação de chave estrangeira) |
-| **500 Internal Server Error** | Falha inesperada na comunicação com o banco de dados |
+| 200 | Consulta, atualização ou exclusão concluída; DELETE retorna mensagem JSON |
+| 201 | Registro criado |
+| 400 | UUID, JSON ou campos inválidos; plano/aluno informado como vínculo não existe |
+| 404 | Registro solicitado ou rota inexistente |
+| 409 | Duplicidade ou operação bloqueada por regra de negócio/relacionamento |
+| 413 | Corpo da requisição acima do limite do Express |
+| 500 | Falha inesperada; detalhes são registrados apenas no servidor |
 
-> Os Controllers definem as respostas de sucesso. Os Services lançam erros de aplicação, tratados
-> pelo middleware central. O Express 5 encaminha rejeições dos handlers assíncronos a esse middleware.
-> Falhas inesperadas retornam 500 e são registradas no servidor sem expor detalhes ao cliente.
+## 8. Exemplos de requisições
 
----
+Todos os POST/PUT usam `Content-Type: application/json`. O Swagger apresenta os tipos, campos
+obrigatórios e respostas de cada operação. Os exemplos abaixo também servem para PUT completo,
+alterando os campos desejados e usando o ID no caminho.
 
-## 12. Funcionalidades adicionais
+### Criar plano — POST /planos
 
-Além do CRUD completo exigido, foram implementadas melhorias previstas como evolução da solução:
-
-| Funcionalidade | Endpoint | Descrição |
-| --- | --- | --- |
-| **Pesquisa por palavra-chave (Planos)** | `GET /planos/search?keyword=muscula` | Busca planos cujo `nome` ou `descricao` contenham o termo informado (busca parcial, sem diferenciar maiúsculas/minúsculas) |
-| **Pesquisa por palavra-chave (Alunos)** | `GET /alunos/search?keyword=eduardo` | Busca alunos por `nome` ou `email` |
-| **Filtro por relacionamento** | `GET /alunos/plano/:planoId` | Lista somente os alunos matriculados em um plano específico |
-| **Ordenação** | — | Planos ordenados por `ordem_exibicao`; alunos ordenados por `nome` |
-| **Rota de verificação** | `GET /` | Informa nome e versão da API |
-| **Tratamento de rota inexistente** | — | Qualquer rota não registrada responde **404** com JSON padronizado |
-| **Integridade referencial** | — | Bloqueio de exclusão de plano com alunos vinculados (**409**) e de cadastro de aluno com plano inexistente (**400**) |
-
----
-
-## 13. Roteiro sugerido de demonstração
-
-Sequência sugerida para demonstração e arguição do projeto:
-
-1. **Apresentar o domínio e as entidades** (seção 4): problema, planos, alunos e o relacionamento 1:N.
-2. **Mostrar a estrutura de pastas** (seção 5) e explicar o caminho da requisição:
-   `routes → controller → service → repository → Supabase`.
-3. **Mostrar as tabelas no Supabase** (`planos` e `alunos`), destacando a coluna `id` do tipo `uuid`,
-   a chave primária e a chave estrangeira `alunos.planoId → planos.id`.
-4. **Executar `npm run dev`** e abrir `GET /` no Postman para verificar que a API está no ar.
-5. **CRUD de Planos:** `POST` (201) → `GET` (200) → `GET /planos/:id` (200) → `PUT` (200) → `DELETE` (200).
-6. **CRUD de Alunos:** `POST` usando o `planoId` de um plano existente (201) → `GET` (200) →
-   `PUT` (200) → `DELETE` (200).
-7. **Demonstrar as validações:** enviar um `POST /alunos` com e-mail inválido e data no formato
-   `DD/MM/AAAA` para exibir a resposta **400** com a lista de erros.
-8. **Demonstrar o tratamento de erros e a integridade referencial:**
-   - `GET /alunos/<uuid-inexistente>` → **404**;
-   - `DELETE /planos/<id-do-plano-com-alunos>` → **409**;
-   - `GET /rota-inexistente` → **404**.
-9. **Demonstrar as funcionalidades adicionais:** pesquisa por palavra-chave e filtro de alunos por plano.
-10. **Mostrar o `.gitignore` e o `.env.example`**, explicando que as credenciais reais ficam apenas no
-    `.env` local e nunca são versionadas.
-
----
-
-Desenvolvido para a APS da disciplina de **Desenvolvimento Back-End** — 2026.
-
-
-## 14. Evolução — branch `01-arquitetura-services`
-
-A primeira etapa da avaliação final mantém as duas entidades e todas as rotas da APS.
-A tag `entrega-parte-1` identifica a versão anterior à refatoração.
-
-### Camadas e orientação a objetos
-
-O fluxo é `Routes → Controllers → Services → Repositories → Supabase`.
-
-- `src/model`: interfaces das entidades persistidas e tipos de entrada sem `id`/`created_at`.
-- `src/controller`: classes responsáveis pelas respostas HTTP.
-- `src/services`: classes com regras de negócio e dependências privadas recebidas pelo construtor.
-- `src/repositories`: classes de acesso ao Supabase e interfaces que permitem mocks nos testes.
-- `src/validators`: validação de entradas desconhecidas, UUID, datas e palavras-chave.
-- `src/errors` e `src/middlewares`: erros tipados e tratamento centralizado em JSON.
-- `src/app.ts`: fábrica `createApp`, que recebe os repositories sem carregar credenciais.
-- `src/server.ts`: conecta os repositories reais ao cliente Supabase e inicia o servidor.
-
-As pastas existentes `model` e `controller` foram mantidas para reduzir alterações de caminhos.
-
-### Regras e respostas desta etapa
-
-Planos não aceitam valores negativos, duração menor que um mês ou ordem de exibição inválida.
-A exclusão de plano com alunos retorna 409; a FK continua protegendo a integridade no banco.
-
-Alunos exigem plano existente (400 quando ausente). Cadastro ou transferência para plano inativo
-retorna 409. Editar um aluno mantendo seu plano atual é permitido mesmo se o plano foi desativado.
-O valor negociado do aluno pode diferir do preço do plano. Datas de nascimento futuras ou inexistentes
-são rejeitadas, assim como valores negativos e não finitos.
-
-Todos os IDs de rota inválidos retornam 400. Registros ausentes retornam 404 e falhas inesperadas
-retornam 500, sem serem confundidas com ausência de registro. JSON malformado retorna 400; corpo
-acima do limite do Express retorna 413. Exclusões bem-sucedidas continuam retornando 200 com mensagem.
-Enviar `id` ou `created_at` no POST/PUT retorna 400; outros campos extras não são persistidos.
-PUT continua exigindo todos os campos editáveis.
-
-Pesquisas mantêm correspondência parcial e ordenação. O termo é aparado e não aceita vírgulas,
-parênteses, aspas, barra invertida ou curingas `%`/`*`, evitando alterar a expressão de filtro.
-
-### Testes unitários
-
-```bash
-npm install
-npm run typecheck
-npm run build
-npm test
-npm run test:unit
-npm run test:watch
+```json
+{
+  "nome": "Musculação",
+  "descricao": "Treino de força com pesos livres e máquinas.",
+  "icon": "💪",
+  "ordem_exibicao": 1,
+  "valor_mensal": 129.90,
+  "duracao_meses": 12,
+  "ativo": true
+}
 ```
 
-Os testes unitários ficam em `src/tests/unit` e usam Vitest com repositories simulados.
-Execute `npm run test:unit` para rodá-los sem Docker, `.env` ou banco. Na terceira branch,
-`npm test` passou a executar também a integração, conforme a seção 16.
-Verificam regras dos Services, sucesso/falha, ausência de gravação em entradas inválidas,
-conflitos de relacionamento e tratamento de erros. A configuração segue a
-[documentação do Vitest](https://vitest.dev/config/).
+A resposta 201 contém esses campos, `id` e `created_at`. Copie o ID para o cadastro do aluno.
 
-`npm run typecheck` verifica também os tipos dos testes. `npm run build` gera somente o código
-normal da aplicação em `dist`, sem incluir testes. Para executar a compilação local com `.env`, use
-`node --env-file=.env dist/server.js`; `npm start` pressupõe variáveis já configuradas no ambiente.
+### Criar aluno — POST /alunos
 
-Na primeira branch, Mensalidades, integração, cobertura e Swagger ficaram para etapas posteriores.
-A segunda etapa está descrita abaixo; integração, cobertura e Swagger continuam previstos para as próximas branches.
+```json
+{
+  "planoId": "11111111-1111-4111-8111-111111111111",
+  "nome": "Eduardo Lopes",
+  "descricao": "Aluno iniciante, foco em hipertrofia.",
+  "email": "eduardo@example.com",
+  "telefone": "(41) 99999-1111",
+  "data_nascimento": "2003-05-14",
+  "valor_mensalidade": 119.90,
+  "ativo": true
+}
+```
 
+Substitua `planoId` pelo UUID do plano criado. A resposta 201 fornece o ID do aluno.
 
-## 15. Evolução — branch `02-mensalidades`
-
-A segunda branch parte de `01-arquitetura-services` e acrescenta o controle de cobranças.
-O relacionamento completo é **Plano 1:N Aluno 1:N Mensalidade**.
-
-### Entidade Mensalidade
-
-| Campo | Tipo | Descrição |
-| --- | --- | --- |
-| `id` | uuid | Gerado pelo banco |
-| `alunoId` | uuid | FK para `alunos.id`, obrigatório |
-| `competencia` | date | Primeiro dia do mês cobrado, no formato `AAAA-MM-01` |
-| `valor` | numeric(10,2) | Valor histórico de 0 a 99999999.99, até duas casas decimais |
-| `data_vencimento` | date | Data válida no formato `AAAA-MM-DD` |
-| `data_pagamento` | date, aceita null | Obrigatória quando paga; null nos demais status |
-| `status` | text | `pendente`, `paga` ou `cancelada` |
-| `created_at` | timestamptz | Gerado pelo banco |
-
-### Preparar o banco — escolha um dos caminhos
-
-**Banco novo:** execute `schema.sql` no SQL Editor do Supabase. Se desejar dados de demonstração,
-execute `seed.sql` uma única vez: ele cria quatro planos, dois alunos e duas mensalidades pendentes
-para o mês atual, vinculadas aos UUIDs gerados. Executá-lo novamente cria novos registros.
-
-**Banco que já possui Planos e Alunos:** execute somente `migrations/002_mensalidades.sql`, uma única vez,
-antes de iniciar esta versão da API. A migração preserva os registros existentes e cria a tabela,
-as restrições, os índices, o trigger e o acesso da role de serviço. As mensalidades antigas não são
-criadas automaticamente; cadastre-as pela API. Não execute novamente o schema completo nem o seed
-apenas para atualizar esse banco.
-
-O schema novo já inclui a migração: não execute ambos no mesmo banco. Os scripts usam transação,
-portanto uma falha impede a aplicação parcial. O banco deve aceitar gravações; o erro `25006`
-(somente leitura) precisa ser resolvido no ambiente antes da execução.
-
-RLS permanece habilitado. A tabela nova concede CRUD à role `service_role`, utilizada pela chave
-secreta do servidor; não há acesso anônimo configurado por esta migração.
-
-### Regras de cobrança
-
-- Criar uma mensalidade exige aluno existente e ativo. Transferir uma cobrança também exige aluno ativo.
-- Um aluno possui no máximo uma mensalidade por competência, incluindo canceladas. É possível editar
-  uma cancelada, reabrindo-a como pendente, ou excluí-la antes de cadastrar outra para aquele mês.
-- O valor é informado explicitamente e não é recalculado ao mudar o plano ou a mensalidade do aluno.
-- Uma cobrança pendente pode ser paga ou cancelada. O PUT também permite corrigir os dados de uma
-  cobrança cancelada. Depois de paga, nenhuma alteração nem exclusão é permitida.
-- É permitido quitar uma cobrança já existente após a desativação do aluno, mantendo o vínculo.
-- Pagamento exige data real e não futura, usando o dia civil de `America/Sao_Paulo`.
-- Vencimento pode ser anterior ao dia atual: isso permite registrar cobranças atrasadas.
-- A exclusão de aluno com qualquer mensalidade vinculada retorna 409. A FK reforça essa proteção.
-- A chave única impede duplicidade concorrente. Um trigger impede atualizar/excluir mensalidades
-  pagas mesmo se o pagamento ocorrer entre a consulta do Service e a gravação.
-
-### Endpoints de Mensalidades
-
-| Método | Rota | Finalidade | Sucesso |
-| --- | --- | --- | --- |
-| POST | `/mensalidades` | Criar cobrança | 201 + registro |
-| GET | `/mensalidades` | Listar por competência decrescente, com desempate por ID | 200 + array |
-| GET | `/mensalidades/:id` | Consultar pelo UUID | 200 + registro |
-| PUT | `/mensalidades/:id` | Atualizar todos os campos editáveis, inclusive pagamento | 200 + registro |
-| DELETE | `/mensalidades/:id` | Excluir cobrança pendente/cancelada | 200 + mensagem |
-
-Erros: **400** para entradas inválidas ou aluno informado inexistente; **404** para mensalidade
-inexistente; **409** para competência ocupada, aluno inativo em nova cobrança/transferência ou
-alteração/exclusão de cobrança paga; **500** para falhas inesperadas de infraestrutura.
-
-Exemplo de POST (substitua `alunoId` pelo UUID de um aluno cadastrado):
+### Criar mensalidade — POST /mensalidades
 
 ```json
 {
   "alunoId": "22222222-2222-4222-8222-222222222222",
   "competencia": "2026-11-01",
-  "valor": 129.90,
+  "valor": 119.90,
   "data_vencimento": "2026-11-10",
   "data_pagamento": null,
   "status": "pendente"
 }
 ```
 
-Para registrar pagamento, envie o mesmo objeto completo no PUT, alterando `status` para `paga`
-e `data_pagamento` para uma data válida, por exemplo `2026-11-17` se ela não for futura no momento
-da execução. Para cancelar, envie `status: "cancelada"` e `data_pagamento: null`.
-Não envie `id` ou `created_at`. Campos obrigatórios também são exigidos no PUT.
+Substitua `alunoId`. Para registrar pagamento, envie o objeto completo no PUT:
+
+```json
+{
+  "alunoId": "22222222-2222-4222-8222-222222222222",
+  "competencia": "2026-11-01",
+  "valor": 119.90,
+  "data_vencimento": "2026-11-10",
+  "data_pagamento": "2026-11-17",
+  "status": "paga"
+}
+```
+
+A data de pagamento não pode ser futura no momento da execução. Para cancelar uma cobrança ainda
+não paga, use `status: "cancelada"` e `data_pagamento: null`. Depois de paga, a cobrança é imutável.
+
+Exemplo de erro de validação (400):
+
+```json
+{
+  "message": "Dados inválidos.",
+  "erros": ["A competência deve ser uma data válida no primeiro dia do mês (AAAA-MM-01)."]
+}
+```
 
 Exemplo de conflito (409):
 
@@ -903,116 +373,142 @@ Exemplo de conflito (409):
 { "message": "Já existe uma mensalidade para este aluno e competência." }
 ```
 
-### Arquivos e validação da etapa
+## 9. Swagger e Postman
 
-A entidade segue as mesmas camadas da primeira branch, com `MensalidadeService`,
-`MensalidadeRepository`, `MensalidadeController`, tipos e validador próprios.
-`AlunoService` recebe também o contrato de consulta de mensalidades para proteger a exclusão.
+Acesse **http://localhost:3000/api-docs/** com a API iniciada. O contrato está em
+[src/docs/openapi.ts](src/docs/openapi.ts) e é servido em `/openapi.json`.
 
-Execute `npm run typecheck`, `npm run build` e `npm test`.
-Os testes unitários cobrem criação, pagamento, cancelamento, unicidade, aluno inativo,
-datas (inclusive virada de dia no fuso da academia), valores, exclusão e erros concorrentes.
-Os testes unitários continuam independentes do banco real. A suíte de integração e a medição
-de cobertura foram adicionadas na terceira branch (seção 16); Swagger e revisão final da documentação
-permanecem previstos para a quarta.
+1. Abra uma operação de Planos e clique em **Try it out**.
+2. Preencha o JSON e clique em **Execute**.
+3. Use o UUID retornado no cadastro de Alunos e, depois, de Mensalidades.
+4. Consulte as respostas e os códigos de erro descritos em cada operação.
 
+As chamadas executam operações reais na instância aberta. O servidor do Swagger é relativo (`/`),
+portanto utiliza a mesma origem e porta da página. Os assets são servidos localmente, sem CDN.
+A API não exige chave no Swagger; a chave secreta do Supabase nunca é enviada ao navegador.
 
-## 16. Testes de integração e cobertura — `03-testes-integracao`
+Alternativamente, importe [academia_system.postman_collection.json](academia_system.postman_collection.json).
+Defina `baseUrl` e execute manualmente os POSTs na ordem Plano → Aluno → Mensalidade. Scripts da coleção
+salvam os UUIDs em `planoId`, `alunoId` e `mensalidadeId`. Ajuste `dataPagamento` antes de pagar.
+Não execute a coleção inteira em sequência: ela inclui operações alternativas, como pagar e excluir.
 
-Esta etapa testa os endpoints das três entidades com **Vitest e Supertest**, passando por
-Controllers, Services, Repositories reais e cliente Supabase até um **PostgreSQL 16 com PostgREST**
-local. Não há mocks de persistência nos cenários de CRUD. Um cenário separado injeta uma falha
-inesperada apenas para verificar o contrato HTTP 500 sem expor detalhes internos.
+## 10. Testes e cobertura
 
-### Pré-requisitos e comandos
+### Comandos
 
-Use Node.js 22 ou superior, dependências instaladas com `npm ci`, e Docker Desktop iniciado
-com suporte a containers Linux e Docker Compose v2. As imagens `postgres:16` e
-`postgrest/postgrest:v14.3` são baixadas na primeira execução; ela pode demorar mais.
+```bash
+npm run test:unit
+npm run test:integration
+npm test
+npm run test:coverage
+```
 
-| Comando | O que executa | Docker |
+| Comando | Escopo | Docker |
 | --- | --- | --- |
-| `npm run test:unit` | Testes unitários dos Services e do middleware | Não |
-| `npm run test:watch` | Testes unitários em modo de observação | Não |
-| `npm run test:integration` | Integração dos endpoints e persistência | Sim |
-| `npm test` | Todos os testes unitários e de integração | Sim |
-| `npm run test:coverage` | Todos os testes, limites e relatórios de cobertura | Sim |
-| `npm run typecheck` | Tipos da aplicação e testes | Não |
-| `npm run build` | Compilação da aplicação | Não |
+| `test:unit` | Services, validadores, middleware e contrato OpenAPI | Não |
+| `test:watch` | Unitários em observação | Não |
+| `test:integration` | Endpoints, Swagger, persistência e restrições | Sim |
+| `test` | Todas as suítes | Sim |
+| `test:coverage` | Todas as suítes, limites e relatórios | Sim |
 
-No PowerShell, caso `npm.ps1` seja bloqueado pela política de execução, use `npm.cmd` no lugar de `npm`.
-A integração precisa ser executada pelos comandos npm acima. Rodar o arquivo diretamente pelo Vitest
-sem o runner falha com instrução de configuração, em vez de acessar outro banco ou pular os testes.
+### Isolamento e limpeza
 
-### Como o isolamento funciona
+Os unitários usam mocks de Repositories e não carregam `.env`. A integração usa Supertest, cliente
+Supabase e Repositories reais contra PostgreSQL 16/PostgREST locais descartáveis. Somente um cenário
+injeta falha para verificar o contrato HTTP 500.
 
-`scripts/test.mjs` cria um projeto Docker exclusivo a cada execução, chamado `academia-test-<uuid>`.
-Ele aplica o `schema.sql` em um banco novo `academia_test`, gera um token local temporário e inicia
-PostgREST em uma porta aleatória ligada somente a `127.0.0.1`. A porta do PostgreSQL não é publicada.
-O runner usa `test-infra/compose.env`, intencionalmente vazio, para não carregar o `.env` da aplicação.
+`scripts/test.mjs` cria um projeto Docker exclusivo `academia-test-<uuid>`, aplica `schema.sql` e gera
+um token local temporário. O PostgreSQL não publica porta; PostgREST usa porta aleatória somente em
+`127.0.0.1`. A configuração em `test-infra/compose.env` impede o carregamento do `.env` da aplicação.
 
-As variáveis `TEST_DB_PROJECT`, `TEST_SUPABASE_URL` e `TEST_SUPABASE_KEY` são geradas pelo runner e
-passadas somente ao processo de testes. Não é necessário criar `.env.test`, configurar credenciais
-reais nem criar outro projeto Supabase hospedado. Senhas e segredo JWT em `test-infra` são valores
-fictícios exclusivos desse ambiente descartável.
+`TEST_DB_PROJECT`, `TEST_SUPABASE_URL` e `TEST_SUPABASE_KEY` são fornecidos automaticamente ao processo
+de testes; não crie `.env.test` nem use credenciais reais. Os valores em `test-infra` são fictícios.
+O helper recusa destino externo e adapta apenas o prefixo `/rest/v1` do gateway Supabase ao PostgREST.
 
-O helper recusa endereços externos ou projetos sem o formato esperado. A única adaptação de transporte
-remove `/rest/v1`, prefixo do gateway Supabase que não existe no PostgREST direto. As classes de
-Repository e as consultas utilizadas são as mesmas da aplicação. Isso valida a persistência e a
-Data API local, mas não valida os serviços Auth/Storage nem permissões e rede do Supabase hospedado.
-
-Os cenários rodam sequencialmente e criam seus próprios registros. Antes e depois de cada teste,
-as três tabelas são limpas com TRUNCATE dentro desse container exclusivo, inclusive cobranças pagas,
-sem remover o trigger da aplicação. Ao terminar, mesmo com testes falhando, o runner remove containers,
-rede e volumes do projeto criado. As imagens ficam em cache. Não há limpeza de dados de produção.
-
-Se o processo for encerrado à força e não conseguir executar a limpeza, use apenas o nome exato do
-projeto mostrado no início da execução:
+Cada cenário cria seus próprios dados. As tabelas são limpas antes/depois de cada teste, inclusive
+mensalidades pagas, com TRUNCATE restrito ao container exclusivo. Os testes rodam sequencialmente.
+O runner remove containers, rede e volumes ao terminar, inclusive em falhas. As imagens ficam em cache.
+Em encerramento forçado, limpe somente o projeto exato indicado na saída:
 
 ```bash
 docker compose --env-file test-infra/compose.env -f test-infra/compose.yaml -p academia-test-<uuid-da-execucao> down --volumes --remove-orphans
 ```
 
-### Cenários cobertos
+Essa suíte valida a Data API local e a persistência, não os serviços Auth/Storage nem a rede e os grants
+do Supabase hospedado. Nenhum banco de desenvolvimento/produção é usado nos testes.
 
-- CRUD completo das três entidades, com códigos HTTP, conteúdo das respostas e confirmação da persistência.
-- Listas vazias, ordenação, pesquisa por nome/descrição/e-mail e filtro de alunos por plano.
-- UUID inválido, registro inexistente, corpo inválido, JSON malformado, limite de corpo e rota inexistente.
-- Vínculos inexistentes, planos inativos e edição de alunos vinculados a planos desativados.
-- Duplicidade de cobrança, inclusive duas requisições concorrentes para a mesma competência.
-- Pagamento, cancelamento, exclusão permitida e bloqueio de alterações em mensalidades pagas.
-- Preservação do valor histórico após alteração dos preços do plano/aluno.
-- Bloqueio de exclusão de plano com aluno e de aluno com mensalidade.
-- Restrições de FK, unicidade, CHECK e trigger também verificadas diretamente pela persistência.
+### Cenários e relatórios
 
-### Cobertura e evidências
+A suíte cobre CRUD das três entidades, códigos HTTP e dados persistidos, pesquisas, ordenação, filtros,
+entradas inválidas, registros inexistentes, conflitos, concorrência na competência, histórico de valores,
+FKs, unicidade, CHECKs, trigger de cobrança paga e validade/serviço do Swagger.
 
-`vitest.config.ts` exige **60% em cada métrica global**: linhas, instruções, funções e ramificações.
-O comando termina com erro se qualquer limite não for atingido. O `include` abrange `src/**/*.ts`,
-inclusive arquivos não executados. Apenas testes/helpers e configuração são excluídos; nenhuma camada
-de comportamento foi retirada para aumentar os percentuais. `server.ts` permanece incluído, mesmo
-que os testes usem `createApp` sem abrir a porta do servidor de produção.
+A configuração exige **60% global em cada métrica**, falhando se qualquer limite não for atingido.
+Todos os fontes de `src` são incluídos, inclusive os não executados; somente testes/helpers e configuração
+são excluídos. Nenhuma camada de comportamento é removida, e `server.ts` permanece na medição.
 
-Os relatórios ficam em:
-
-- `coverage/index.html`: relatório navegável por arquivo e linha, gerado localmente.
-- `coverage/lcov.info`: resultado para ferramentas de análise.
-- [reports/coverage.md](reports/coverage.md): resumo versionado com percentuais por arquivo.
-- [reports/coverage-summary.json](reports/coverage-summary.json): métricas versionadas em JSON, sem caminhos absolutos locais.
-
-Os resumos versionados são atualizados automaticamente somente após `npm run test:coverage` passar.
-O relatório registra a data e um hash dos fontes, testes e configuração usados para identificar a versão
-medida. Os percentuais reais da execução validada estão no relatório vinculado acima.
-
-Resultado validado nesta etapa: **185 testes aprovados** (134 unitários e 51 de integração).
+<!-- RESULTADOS_COBERTURA -->
+**188 testes aprovados: 136 unitários e 52 de integração.**
 
 | Métrica global | Cobertura | Mínimo |
 | --- | --- | --- |
-| Linhas | 97,42% | 60% |
-| Instruções | 93,17% | 60% |
-| Funções | 98,92% | 60% |
+| Linhas | 97,45% | 60% |
+| Instruções | 93,24% | 60% |
+| Funções | 98,93% | 60% |
 | Ramificações | 89,81% | 60% |
+<!-- FIM_RESULTADOS_COBERTURA -->
 
-Configurações consultadas: [cobertura do Vitest](https://vitest.dev/guide/coverage) e
+- [reports/coverage.md](reports/coverage.md): resumo versionado por arquivo, data e hash dos fontes/testes.
+- [reports/coverage-summary.json](reports/coverage-summary.json): métricas versionadas sem caminhos locais absolutos.
+- `coverage/index.html`: HTML navegável, gerado localmente e ignorado pelo Git.
+- `coverage/lcov.info`: resultado para ferramentas de análise.
+
+Os resumos são atualizados automaticamente somente após `npm run test:coverage` passar.
+
+## 11. Demonstração e entrega
+
+Roteiro sugerido:
+
+1. Apresentar o domínio, as três entidades e o fluxo entre camadas.
+2. Mostrar Swagger e criar um plano, um aluno e uma mensalidade pendente.
+3. Demonstrar listagem, consulta e atualização de cada entidade.
+4. Tentar repetir a competência e excluir aluno/plano com vínculos: respostas 409.
+5. Excluir uma cobrança pendente e demonstrar exclusão de aluno e plano sem dependências.
+6. Em outro conjunto de registros, pagar uma mensalidade e demonstrar seu bloqueio de alteração/exclusão.
+7. Executar testes e apresentar os relatórios de cobertura.
+8. Mostrar os scripts SQL, `.env.example`, `.gitignore` e histórico Git.
+
+Histórico das etapas:
+
+| Branch | Evolução |
+| --- | --- |
+| `01-arquitetura-services` | POO, Services, validações, erros e unitários |
+| `02-mensalidades` | Terceira entidade, regras e migração |
+| `03-testes-integracao` | Integração, banco isolado e cobertura |
+| `04-documentacao-entrega` | Swagger, documentação, exemplos e validação final |
+
+As branches são cumulativas. A tag `entrega-parte-1` preserva a base. A versão final precisa estar
+publicada e acessível ao professor, e a branch correta deve ser indicada se ainda não houver merge na
+`main`. Criar um commit local não publica a branch. A pasta `obsolete/` contém material local ignorado,
+portanto não é requisito para executar ou entender o projeto entregue.
+
+Prazo do enunciado: **26/11/2026 às 22h10**, no **AVA**, por link do repositório Git. Frontend,
+autenticação, deploy e CI/CD não foram incluídos no escopo destas quatro etapas.
+
+## 12. Solução de problemas
+
+| Problema | Verificação |
+| --- | --- |
+| Variáveis Supabase ausentes | Copiar `.env.example`, preencher e usar `dev` ou `start:local` |
+| Erro 25006 no SQL | Banco/conexão está somente leitura; resolver no ambiente antes de executar os scripts |
+| Tabela não existe | Aplicar schema ou migração conforme o estado do banco |
+| Data API retorna permission denied | Conferir chave de serviço e grants da seção 6 |
+| Porta 3000 ocupada | Definir outra `PORT` no `.env` |
+| PowerShell bloqueia npm.ps1 | Usar `npm.cmd` no lugar de `npm` |
+| Testes de integração não iniciam | Abrir Docker Desktop, conferir containers Linux e `docker compose version` |
+| Integração executada diretamente falha | Usar `npm run test:integration`; o runner fornece ambiente isolado |
+| Branch final não encontrada no clone | Publicar `04-documentacao-entrega` ou usar a referência final disponibilizada pela equipe |
+
+Referências técnicas: [Swagger UI Express](https://github.com/scottie1984/swagger-ui-express),
+[cobertura do Vitest](https://vitest.dev/guide/coverage) e
 [PostgREST em Docker](https://docs.postgrest.org/en/stable/explanations/install.html).
-Swagger e a revisão final do material de entrega continuam previstos para a branch 4.

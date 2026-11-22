@@ -12,10 +12,17 @@ import type { IMensalidadeRepository } from "./repositories/IMensalidadeReposito
 import MensalidadeService from "./services/MensalidadeService.js";
 import MensalidadeController from "./controller/MensalidadeController.js";
 import criarMensalidadeRoutes from "./routes/mensalidadeRoutes.js";
+import swaggerUi from "swagger-ui-express";
+import { openapiDocument } from "./docs/openapi.js";
 
 export function createApp(repositories: { planos: IPlanoRepository; alunos: IAlunoRepository; mensalidades: IMensalidadeRepository }) {
     const app = express();
     app.use(express.json());
+    app.get("/openapi.json", (_req, res) => { res.json(openapiDocument); });
+    app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openapiDocument, {
+        customSiteTitle: "Academia System — Documentação da API",
+        swaggerOptions: { validatorUrl: null, displayRequestDuration: true },
+    }));
     app.get("/", (_req, res) => {
         res.status(200).json({ message: "Academia System - API", version: "1.0.0" });
     });

@@ -232,6 +232,17 @@ describe.each(["planos", "alunos", "mensalidades"])("contratos HTTP: %s", entida
 });
 
 describe("contratos gerais e garantias do banco", () => {
+    it("publica OpenAPI e Swagger com assets locais", async () => {
+        const document = await request(app).get("/openapi.json").expect(200);
+        expect(document.body.openapi).toBe("3.0.3");
+        expect(document.body.paths).toHaveProperty("/mensalidades/{id}");
+        const page = await request(app).get("/api-docs/").expect(200);
+        expect(page.headers["content-type"]).toContain("text/html");
+        expect(page.text).toContain("swagger-ui");
+        await request(app).get("/api-docs/swagger-ui.css").expect(200);
+        const script = await request(app).get("/api-docs/swagger-ui-init.js").expect(200);
+        expect(script.text).toContain("Mensalidades");
+    });
     it("raiz e rota inexistente respondem JSON", async () => {
         expect((await request(app).get("/").expect(200)).body.message).toBe("Academia System - API");
         expect((await request(app).get("/inexistente").expect(404)).body).toEqual({ message: "Rota não encontrada." });

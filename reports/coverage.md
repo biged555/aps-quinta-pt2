@@ -1,19 +1,20 @@
 # Relatório de cobertura
 
-Gerado em: 22/11/2026, 15:48:29 (America/Sao_Paulo).
+Gerado em: 22/11/2026, 16:17:57 (America/Sao_Paulo).
 
 Comando: `npm run test:coverage`. Provedor: Vitest/V8. Limite global: 60% em cada métrica.
 
-SHA-256 dos fontes, testes e configuração Vitest (quebras normalizadas): `cd88d22b2f7a902c624db0981c46f2c8d8361b86f205243b1d20d8e03d4d34b6`.
+SHA-256 dos fontes, testes e configuração Vitest (quebras normalizadas): `9c99fa94693385d0093c18bd0c5aad3e58d665a5c57f5d81fbd4662b0a0faf74`.
 
 | Arquivo | Linhas | Instruções | Funções | Ramificações |
 | --- | --- | --- | --- | --- |
-| total | 97.42% | 93.17% | 98.92% | 89.81% |
+| total | 97.45% | 93.24% | 98.93% | 89.81% |
 | src/app.ts | 100% | 100% | 100% | 100% |
 | src/server.ts | 0% | 0% | 0% | 0% |
 | src/controller/AlunoController.ts | 100% | 100% | 100% | 100% |
 | src/controller/MensalidadeController.ts | 100% | 100% | 100% | 100% |
 | src/controller/PlanoController.ts | 100% | 100% | 100% | 100% |
+| src/docs/openapi.ts | 100% | 100% | 100% | 100% |
 | src/errors/AppError.ts | 100% | 100% | 100% | 100% |
 | src/middlewares/errorHandler.ts | 100% | 100% | 100% | 100% |
 | src/model/Aluno.ts | 0% | 0% | 0% | 0% |

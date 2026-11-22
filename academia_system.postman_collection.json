@@ -1,368 +1,409 @@
 {
-	"info": {
-		"_postman_id": "9a3f0d2c-6b1e-4c9a-9f0b-academia000001",
-		"name": "academia-system-API",
-		"description": "Collection da API REST do Academia System (APS - Desenvolvimento Back-End).\n\nEntidades: Planos e Alunos.\n\nComo usar: execute primeiro os endpoints de Planos, copie o 'id' retornado em POST - Criar Plano e cole na variável 'planoId' da collection. Depois execute os endpoints de Alunos.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "Planos",
-			"item": [
-				{
-					"name": "GET - Listar Planos",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/planos",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"planos"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GET - Plano por ID",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/planos/{{planoId}}",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"planos",
-								"{{planoId}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GET - Pesquisar Planos (keyword)",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/planos/search?keyword=musculacao",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"planos",
-								"search"
-							],
-							"query": [
-								{
-									"key": "keyword",
-									"value": "musculacao"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "POST - Criar Plano",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/planos",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"planos"
-							]
-						},
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"nome\": \"Musculação\",\n    \"descricao\": \"Treino de força com pesos livres e máquinas.\",\n    \"icon\": \"💪\",\n    \"ordem_exibicao\": 1,\n    \"valor_mensal\": 129.9,\n    \"duracao_meses\": 12,\n    \"ativo\": true\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						}
-					},
-					"response": [],
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"const dados = pm.response.json();",
-									"",
-									"if (pm.response.code === 201 && dados && dados.id) {",
-									"    pm.collectionVariables.set(\"planoId\", dados.id);",
-									"    console.log(\"ID do plano salvo automaticamente na variável planoId:\", dados.id);",
-									"}"
-								]
-							}
-						}
-					]
-				},
-				{
-					"name": "PUT - Atualizar Plano",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/planos/{{planoId}}",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"planos",
-								"{{planoId}}"
-							]
-						},
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"nome\": \"Musculação Premium\",\n    \"descricao\": \"Treino de força com acompanhamento de personal trainer.\",\n    \"icon\": \"💪\",\n    \"ordem_exibicao\": 1,\n    \"valor_mensal\": 199.9,\n    \"duracao_meses\": 12,\n    \"ativo\": true\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "DELETE - Excluir Plano",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/planos/{{planoId}}",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"planos",
-								"{{planoId}}"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Alunos",
-			"item": [
-				{
-					"name": "GET - Listar Alunos",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/alunos",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"alunos"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GET - Aluno por ID",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/alunos/{{alunoId}}",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"alunos",
-								"{{alunoId}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GET - Alunos por Plano (relacionamento)",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/alunos/plano/{{planoId}}",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"alunos",
-								"plano",
-								"{{planoId}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GET - Pesquisar Alunos (keyword)",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/alunos/search?keyword=eduardo",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"alunos",
-								"search"
-							],
-							"query": [
-								{
-									"key": "keyword",
-									"value": "eduardo"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "POST - Criar Aluno",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/alunos",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"alunos"
-							]
-						},
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"planoId\": \"{{planoId}}\",\n    \"nome\": \"Eduardo Lopes\",\n    \"descricao\": \"Aluno iniciante, com foco em hipertrofia.\",\n    \"email\": \"eduardo.lopes@email.com\",\n    \"telefone\": \"(41) 99999-1111\",\n    \"data_nascimento\": \"2003-05-14\",\n    \"valor_mensalidade\": 129.9,\n    \"ativo\": true\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						}
-					},
-					"response": [],
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"const dados = pm.response.json();",
-									"",
-									"if (pm.response.code === 201 && dados && dados.id) {",
-									"    pm.collectionVariables.set(\"alunoId\", dados.id);",
-									"    console.log(\"ID do aluno salvo automaticamente na variável alunoId:\", dados.id);",
-									"}"
-								]
-							}
-						}
-					]
-				},
-				{
-					"name": "PUT - Atualizar Aluno",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"url": {
-							"raw": "{{baseUrl}}/alunos/{{alunoId}}",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"alunos",
-								"{{alunoId}}"
-							]
-						},
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"planoId\": \"{{planoId}}\",\n    \"nome\": \"Eduardo Lopes\",\n    \"descricao\": \"Aluno intermediário, com foco em hipertrofia.\",\n    \"email\": \"eduardo.lopes@email.com\",\n    \"telefone\": \"(41) 99999-1111\",\n    \"data_nascimento\": \"2003-05-14\",\n    \"valor_mensalidade\": 199.9,\n    \"ativo\": true\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "DELETE - Excluir Aluno",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/alunos/{{alunoId}}",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"alunos",
-								"{{alunoId}}"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		}
-	],
-	"variable": [
-		{
-			"key": "baseUrl",
-			"value": "http://localhost:3000",
-			"type": "string"
-		},
-		{
-			"key": "planoId",
-			"value": "cole-aqui-o-id-do-plano-criado",
-			"type": "string"
-		},
-		{
-			"key": "alunoId",
-			"value": "cole-aqui-o-id-do-aluno-criado",
-			"type": "string"
-		}
-	]
+  "info": {
+    "_postman_id": "9a3f0d2c-6b1e-4c9a-9f0b-acde00000001",
+    "name": "academia-system-API",
+    "description": "API de Planos, Alunos e Mensalidades. Execute os POSTs nesta ordem; os IDs são salvos automaticamente nas variáveis da coleção. Teste exclusões na ordem Mensalidades, Alunos, Planos. Uma mensalidade paga não pode ser excluída. Execute manualmente as operações desejadas, não toda a coleção em sequência.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Sistema e documentação",
+      "item": [
+        {
+          "name": "Identificar API",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/"
+          },
+          "response": []
+        },
+        {
+          "name": "OpenAPI JSON",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/openapi.json"
+          },
+          "response": []
+        },
+        {
+          "name": "Swagger UI",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api-docs/"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Planos",
+      "item": [
+        {
+          "name": "POST - Criar Plano",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/planos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Musculação\",\n  \"descricao\": \"Treino de força com pesos livres e máquinas.\",\n  \"icon\": \"💪\",\n  \"ordem_exibicao\": 1,\n  \"valor_mensal\": 129.9,\n  \"duracao_meses\": 12,\n  \"ativo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set(\"planoId\", pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET - Listar Plano",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/planos"
+          },
+          "response": []
+        },
+        {
+          "name": "GET - Consultar Plano",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/planos/{{planoId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT - Atualizar Plano",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/planos/{{planoId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Musculação\",\n  \"descricao\": \"Treino de força com pesos livres e máquinas.\",\n  \"icon\": \"💪\",\n  \"ordem_exibicao\": 1,\n  \"valor_mensal\": 129.9,\n  \"duracao_meses\": 12,\n  \"ativo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE - Excluir Plano",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/planos/{{planoId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "GET - Pesquisar planos",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/planos/search?keyword=muscula"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Alunos",
+      "item": [
+        {
+          "name": "POST - Criar Aluno",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/alunos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planoId\": \"{{planoId}}\",\n  \"nome\": \"Eduardo Lopes\",\n  \"descricao\": \"Aluno iniciante, foco em hipertrofia.\",\n  \"email\": \"eduardo@example.com\",\n  \"telefone\": \"(41) 99999-1111\",\n  \"data_nascimento\": \"2003-05-14\",\n  \"valor_mensalidade\": 119.9,\n  \"ativo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set(\"alunoId\", pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET - Listar Aluno",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/alunos"
+          },
+          "response": []
+        },
+        {
+          "name": "GET - Consultar Aluno",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/alunos/{{alunoId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT - Atualizar Aluno",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/alunos/{{alunoId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planoId\": \"{{planoId}}\",\n  \"nome\": \"Eduardo Lopes\",\n  \"descricao\": \"Aluno iniciante, foco em hipertrofia.\",\n  \"email\": \"eduardo@example.com\",\n  \"telefone\": \"(41) 99999-1111\",\n  \"data_nascimento\": \"2003-05-14\",\n  \"valor_mensalidade\": 119.9,\n  \"ativo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE - Excluir Aluno",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/alunos/{{alunoId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "GET - Pesquisar alunos",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/alunos/search?keyword=eduardo"
+          },
+          "response": []
+        },
+        {
+          "name": "GET - Alunos por plano",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/alunos/plano/{{planoId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Mensalidades",
+      "item": [
+        {
+          "name": "POST - Criar Mensalidade",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/mensalidades",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alunoId\": \"{{alunoId}}\",\n  \"competencia\": \"2026-11-01\",\n  \"valor\": 119.9,\n  \"data_vencimento\": \"2026-11-10\",\n  \"data_pagamento\": null,\n  \"status\": \"pendente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.collectionVariables.set(\"mensalidadeId\", pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET - Listar Mensalidade",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/mensalidades"
+          },
+          "response": []
+        },
+        {
+          "name": "GET - Consultar Mensalidade",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/mensalidades/{{mensalidadeId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT - Atualizar Mensalidade",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/mensalidades/{{mensalidadeId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alunoId\": \"{{alunoId}}\",\n  \"competencia\": \"2026-11-01\",\n  \"valor\": 119.9,\n  \"data_vencimento\": \"2026-11-10\",\n  \"data_pagamento\": null,\n  \"status\": \"pendente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE - Excluir Mensalidade",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/mensalidades/{{mensalidadeId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "PUT - Registrar pagamento",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/mensalidades/{{mensalidadeId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alunoId\": \"{{alunoId}}\",\n  \"competencia\": \"2026-11-01\",\n  \"valor\": 119.9,\n  \"data_vencimento\": \"2026-11-10\",\n  \"data_pagamento\": \"{{dataPagamento}}\",\n  \"status\": \"paga\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT - Cancelar mensalidade",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/mensalidades/{{mensalidadeId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alunoId\": \"{{alunoId}}\",\n  \"competencia\": \"2026-11-01\",\n  \"valor\": 119.9,\n  \"data_vencimento\": \"2026-11-10\",\n  \"data_pagamento\": null,\n  \"status\": \"cancelada\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "planoId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "alunoId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "mensalidadeId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "dataPagamento",
+      "value": "2026-11-17",
+      "type": "string"
+    }
+  ]
 }
