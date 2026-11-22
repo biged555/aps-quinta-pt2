@@ -1,0 +1,30 @@
+# Infraestrutura descartável. Nenhum endereço ou segredo de produção é utilizado.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: academia_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: local_test_only
+    volumes:
+      - ./roles.sql:/docker-entrypoint-initdb.d/00-roles.sql:ro
+      - ../schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./grants.sql:/docker-entrypoint-initdb.d/02-grants.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d academia_test"]
+      interval: 1s
+      timeout: 3s
+      retries: 60
+  rest:
+    image: postgrest/postgrest:v14.3
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:local_test_only@db:5432/academia_test
+      PGRST_DB_SCHEMAS: public
+      PGRST_JWT_SECRET: academia-test-only-secret-at-least-32-characters
+      PGRST_SERVER_HOST: 0.0.0.0
+      GHCRTS: -N2
+    ports:
+      - "127.0.0.1::3000"

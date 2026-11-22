@@ -798,8 +798,9 @@ npm run test:unit
 npm run test:watch
 ```
 
-Os testes ficam em `src/tests/unit` e usam Vitest com repositories simulados.
-Não exigem `.env`, conexão com o Supabase nem alterações no banco.
+Os testes unitários ficam em `src/tests/unit` e usam Vitest com repositories simulados.
+Execute `npm run test:unit` para rodá-los sem Docker, `.env` ou banco. Na terceira branch,
+`npm test` passou a executar também a integração, conforme a seção 16.
 Verificam regras dos Services, sucesso/falha, ausência de gravação em entradas inválidas,
 conflitos de relacionamento e tratamento de erros. A configuração segue a
 [documentação do Vitest](https://vitest.dev/config/).
@@ -911,5 +912,107 @@ A entidade segue as mesmas camadas da primeira branch, com `MensalidadeService`,
 Execute `npm run typecheck`, `npm run build` e `npm test`.
 Os testes unitários cobrem criação, pagamento, cancelamento, unicidade, aluno inativo,
 datas (inclusive virada de dia no fuso da academia), valores, exclusão e erros concorrentes.
-Continuam independentes do banco real. A suíte de integração e a medição de cobertura pertencem
-à terceira branch; Swagger e revisão final da documentação, à quarta.
+Os testes unitários continuam independentes do banco real. A suíte de integração e a medição
+de cobertura foram adicionadas na terceira branch (seção 16); Swagger e revisão final da documentação
+permanecem previstos para a quarta.
+
+
+## 16. Testes de integração e cobertura — `03-testes-integracao`
+
+Esta etapa testa os endpoints das três entidades com **Vitest e Supertest**, passando por
+Controllers, Services, Repositories reais e cliente Supabase até um **PostgreSQL 16 com PostgREST**
+local. Não há mocks de persistência nos cenários de CRUD. Um cenário separado injeta uma falha
+inesperada apenas para verificar o contrato HTTP 500 sem expor detalhes internos.
+
+### Pré-requisitos e comandos
+
+Use Node.js 22 ou superior, dependências instaladas com `npm ci`, e Docker Desktop iniciado
+com suporte a containers Linux e Docker Compose v2. As imagens `postgres:16` e
+`postgrest/postgrest:v14.3` são baixadas na primeira execução; ela pode demorar mais.
+
+| Comando | O que executa | Docker |
+| --- | --- | --- |
+| `npm run test:unit` | Testes unitários dos Services e do middleware | Não |
+| `npm run test:watch` | Testes unitários em modo de observação | Não |
+| `npm run test:integration` | Integração dos endpoints e persistência | Sim |
+| `npm test` | Todos os testes unitários e de integração | Sim |
+| `npm run test:coverage` | Todos os testes, limites e relatórios de cobertura | Sim |
+| `npm run typecheck` | Tipos da aplicação e testes | Não |
+| `npm run build` | Compilação da aplicação | Não |
+
+No PowerShell, caso `npm.ps1` seja bloqueado pela política de execução, use `npm.cmd` no lugar de `npm`.
+A integração precisa ser executada pelos comandos npm acima. Rodar o arquivo diretamente pelo Vitest
+sem o runner falha com instrução de configuração, em vez de acessar outro banco ou pular os testes.
+
+### Como o isolamento funciona
+
+`scripts/test.mjs` cria um projeto Docker exclusivo a cada execução, chamado `academia-test-<uuid>`.
+Ele aplica o `schema.sql` em um banco novo `academia_test`, gera um token local temporário e inicia
+PostgREST em uma porta aleatória ligada somente a `127.0.0.1`. A porta do PostgreSQL não é publicada.
+O runner usa `test-infra/compose.env`, intencionalmente vazio, para não carregar o `.env` da aplicação.
+
+As variáveis `TEST_DB_PROJECT`, `TEST_SUPABASE_URL` e `TEST_SUPABASE_KEY` são geradas pelo runner e
+passadas somente ao processo de testes. Não é necessário criar `.env.test`, configurar credenciais
+reais nem criar outro projeto Supabase hospedado. Senhas e segredo JWT em `test-infra` são valores
+fictícios exclusivos desse ambiente descartável.
+
+O helper recusa endereços externos ou projetos sem o formato esperado. A única adaptação de transporte
+remove `/rest/v1`, prefixo do gateway Supabase que não existe no PostgREST direto. As classes de
+Repository e as consultas utilizadas são as mesmas da aplicação. Isso valida a persistência e a
+Data API local, mas não valida os serviços Auth/Storage nem permissões e rede do Supabase hospedado.
+
+Os cenários rodam sequencialmente e criam seus próprios registros. Antes e depois de cada teste,
+as três tabelas são limpas com TRUNCATE dentro desse container exclusivo, inclusive cobranças pagas,
+sem remover o trigger da aplicação. Ao terminar, mesmo com testes falhando, o runner remove containers,
+rede e volumes do projeto criado. As imagens ficam em cache. Não há limpeza de dados de produção.
+
+Se o processo for encerrado à força e não conseguir executar a limpeza, use apenas o nome exato do
+projeto mostrado no início da execução:
+
+```bash
+docker compose --env-file test-infra/compose.env -f test-infra/compose.yaml -p academia-test-<uuid-da-execucao> down --volumes --remove-orphans
+```
+
+### Cenários cobertos
+
+- CRUD completo das três entidades, com códigos HTTP, conteúdo das respostas e confirmação da persistência.
+- Listas vazias, ordenação, pesquisa por nome/descrição/e-mail e filtro de alunos por plano.
+- UUID inválido, registro inexistente, corpo inválido, JSON malformado, limite de corpo e rota inexistente.
+- Vínculos inexistentes, planos inativos e edição de alunos vinculados a planos desativados.
+- Duplicidade de cobrança, inclusive duas requisições concorrentes para a mesma competência.
+- Pagamento, cancelamento, exclusão permitida e bloqueio de alterações em mensalidades pagas.
+- Preservação do valor histórico após alteração dos preços do plano/aluno.
+- Bloqueio de exclusão de plano com aluno e de aluno com mensalidade.
+- Restrições de FK, unicidade, CHECK e trigger também verificadas diretamente pela persistência.
+
+### Cobertura e evidências
+
+`vitest.config.ts` exige **60% em cada métrica global**: linhas, instruções, funções e ramificações.
+O comando termina com erro se qualquer limite não for atingido. O `include` abrange `src/**/*.ts`,
+inclusive arquivos não executados. Apenas testes/helpers e configuração são excluídos; nenhuma camada
+de comportamento foi retirada para aumentar os percentuais. `server.ts` permanece incluído, mesmo
+que os testes usem `createApp` sem abrir a porta do servidor de produção.
+
+Os relatórios ficam em:
+
+- `coverage/index.html`: relatório navegável por arquivo e linha, gerado localmente.
+- `coverage/lcov.info`: resultado para ferramentas de análise.
+- [reports/coverage.md](reports/coverage.md): resumo versionado com percentuais por arquivo.
+- [reports/coverage-summary.json](reports/coverage-summary.json): métricas versionadas em JSON, sem caminhos absolutos locais.
+
+Os resumos versionados são atualizados automaticamente somente após `npm run test:coverage` passar.
+O relatório registra a data e um hash dos fontes, testes e configuração usados para identificar a versão
+medida. Os percentuais reais da execução validada estão no relatório vinculado acima.
+
+Resultado validado nesta etapa: **185 testes aprovados** (134 unitários e 51 de integração).
+
+| Métrica global | Cobertura | Mínimo |
+| --- | --- | --- |
+| Linhas | 97,42% | 60% |
+| Instruções | 93,17% | 60% |
+| Funções | 98,92% | 60% |
+| Ramificações | 89,81% | 60% |
+
+Configurações consultadas: [cobertura do Vitest](https://vitest.dev/guide/coverage) e
+[PostgREST em Docker](https://docs.postgrest.org/en/stable/explanations/install.html).
+Swagger e a revisão final do material de entrega continuam previstos para a branch 4.
