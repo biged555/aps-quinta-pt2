@@ -140,7 +140,6 @@ src/
 └── server.ts           # Abre a porta para receber requisições
 scripts/                # Runner de testes e exportação de cobertura
 test-infra/             # PostgreSQL/PostgREST descartáveis via Compose
-reports/                # Relatórios versionados de cobertura
 schema.sql              # Estrutura completa para banco novo
 seed.sql                # Dados opcionais de demonstração
 ```
@@ -434,9 +433,8 @@ são excluídos. Nenhuma camada de comportamento é removida, e `server.ts` perm
 | Ramificações | 80,89% | 60% |
 <!-- FIM_RESULTADOS_COBERTURA -->
 
-- [reports/coverage.md](reports/coverage.md): resumo versionado por arquivo, data e hash dos fontes/testes.
-- [reports/coverage-summary.json](reports/coverage-summary.json): métricas versionadas sem caminhos locais absolutos.
 - `coverage/index.html`: HTML navegável, gerado localmente e ignorado pelo Git.
 - `coverage/lcov.info`: resultado para ferramentas de análise.
 
-Os resumos são atualizados automaticamente somente após `npm run test:coverage` passar.
+Os resultados podem ser verificados executando `npm run test:coverage`, que apresenta as métricas
+no terminal e gera os arquivos de cobertura locais.
