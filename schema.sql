@@ -1,5 +1,6 @@
--- Execute primeiro este arquivo no SQL Editor do Supabase.
--- Destinado a um banco onde as tabelas ainda não foram criadas.
+-- Estrutura completa: planos, alunos e mensalidades.
+-- Execute uma vez no SQL Editor do Supabase, em um banco sem estas tabelas.
+-- Depois, execute seed.sql se desejar dados de exemplo.
 BEGIN;
 
 CREATE TABLE public.planos (
@@ -59,7 +60,7 @@ CREATE TABLE public.mensalidades (
 
 -- A chave única já indexa alunoId. Este índice apoia a ordenação da listagem.
 CREATE INDEX mensalidades_competencia_idx ON public.mensalidades (competencia DESC, id);
-CREATE INDEX IF NOT EXISTS alunos_plano_id_idx ON public.alunos ("planoId");
+CREATE INDEX alunos_plano_id_idx ON public.alunos ("planoId");
 
 -- Protege o histórico inclusive em atualizações/exclusões concorrentes.
 CREATE FUNCTION public.proteger_mensalidade_paga()
@@ -81,6 +82,8 @@ BEFORE UPDATE OR DELETE ON public.mensalidades
 FOR EACH ROW EXECUTE FUNCTION public.proteger_mensalidade_paga();
 
 ALTER TABLE public.mensalidades ENABLE ROW LEVEL SECURITY;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.mensalidades TO service_role;
+GRANT USAGE ON SCHEMA public TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON public.planos, public.alunos, public.mensalidades TO service_role;
 
 COMMIT;

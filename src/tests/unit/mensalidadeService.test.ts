@@ -1,7 +1,8 @@
+import PlanoRepository from "../../repositories/PlanoRepository.js";
+import AlunoRepository from "../../repositories/AlunoRepository.js";
+import MensalidadeRepository from "../../repositories/MensalidadeRepository.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import MensalidadeService from "../../services/MensalidadeService.js";
-import type { IMensalidadeRepository } from "../../repositories/IMensalidadeRepository.js";
-import type { IAlunoRepository } from "../../repositories/IAlunoRepository.js";
 import type { MensalidadeInput } from "../../model/Mensalidade.js";
 import { RepositoryError } from "../../errors/AppError.js";
 
@@ -19,16 +20,16 @@ const aluno = {
 
 function setup() {
     const repository = {
-        findAll: vi.fn<IMensalidadeRepository["findAll"]>().mockResolvedValue([{ id, ...input }]),
-        findById: vi.fn<IMensalidadeRepository["findById"]>().mockResolvedValue({ id, ...input }),
-        findByAlunoCompetencia: vi.fn<IMensalidadeRepository["findByAlunoCompetencia"]>().mockResolvedValue(null),
-        existsByAluno: vi.fn<IMensalidadeRepository["existsByAluno"]>().mockResolvedValue(false),
-        create: vi.fn<IMensalidadeRepository["create"]>().mockImplementation(async data => ({ id, ...data })),
-        update: vi.fn<IMensalidadeRepository["update"]>().mockImplementation(async (uuid, data) => ({ id: uuid, ...data })),
-        remove: vi.fn<IMensalidadeRepository["remove"]>().mockResolvedValue({ id, ...input }),
+        findAll: vi.spyOn(MensalidadeRepository, "findAll").mockResolvedValue([{ id, ...input }]),
+        findById: vi.spyOn(MensalidadeRepository, "findById").mockResolvedValue({ id, ...input }),
+        findByAlunoCompetencia: vi.spyOn(MensalidadeRepository, "findByAlunoCompetencia").mockResolvedValue(null),
+        existsByAluno: vi.spyOn(MensalidadeRepository, "existsByAluno").mockResolvedValue(false),
+        create: vi.spyOn(MensalidadeRepository, "create").mockImplementation(async data => ({ id, ...data })),
+        update: vi.spyOn(MensalidadeRepository, "update").mockImplementation(async (uuid, data) => ({ id: uuid, ...data })),
+        remove: vi.spyOn(MensalidadeRepository, "remove").mockResolvedValue({ id, ...input }),
     };
-    const alunos = { findById: vi.fn<IAlunoRepository["findById"]>().mockResolvedValue(aluno) };
-    return { repository, alunos, service: new MensalidadeService(repository, alunos) };
+    const alunos = { findById: vi.spyOn(AlunoRepository, "findById").mockResolvedValue(aluno) };
+    return { repository, alunos, service: new MensalidadeService() };
 }
 
 beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date("2026-11-17T12:00:00Z")); });
@@ -204,3 +205,7 @@ describe("MensalidadeService: consultas, exclusão e falhas", () => {
         await expect(result).rejects.toBe(erro);
     });
 });
+
+// Unit tests use a mock database connection.
+vi.mock("../../config/supabase.js", () => ({ default: {} }));
+afterEach(() => vi.restoreAllMocks());

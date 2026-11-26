@@ -1,8 +1,9 @@
+import PlanoRepository from "../../repositories/PlanoRepository.js";
+import AlunoRepository from "../../repositories/AlunoRepository.js";
+import MensalidadeRepository from "../../repositories/MensalidadeRepository.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PlanoService from "../../services/PlanoService.js";
 import AlunoService from "../../services/AlunoService.js";
-import type { IPlanoRepository } from "../../repositories/IPlanoRepository.js";
-import type { IAlunoRepository } from "../../repositories/IAlunoRepository.js";
 import { RepositoryError } from "../../errors/AppError.js";
 
 const id = "11111111-1111-4111-8111-111111111111";
@@ -12,25 +13,25 @@ const alunoInput = { nome: "Eduardo", descricao: "Aluno", planoId: id, email: "e
 
 function fixtures() {
     const planos = {
-        findAll: vi.fn<IPlanoRepository["findAll"]>().mockResolvedValue([{ id, ...planoInput }]),
-        findById: vi.fn<IPlanoRepository["findById"]>().mockResolvedValue({ id, ...planoInput }),
-        create: vi.fn<IPlanoRepository["create"]>().mockResolvedValue({ id, ...planoInput }),
-        update: vi.fn<IPlanoRepository["update"]>().mockResolvedValue({ id, ...planoInput }),
-        remove: vi.fn<IPlanoRepository["remove"]>().mockResolvedValue({ id, ...planoInput }),
-        searchByKeyword: vi.fn<IPlanoRepository["searchByKeyword"]>().mockResolvedValue([]),
+        findAll: vi.spyOn(PlanoRepository, "findAll").mockResolvedValue([{ id, ...planoInput }]),
+        findById: vi.spyOn(PlanoRepository, "findById").mockResolvedValue({ id, ...planoInput }),
+        create: vi.spyOn(PlanoRepository, "create").mockResolvedValue({ id, ...planoInput }),
+        update: vi.spyOn(PlanoRepository, "update").mockResolvedValue({ id, ...planoInput }),
+        remove: vi.spyOn(PlanoRepository, "remove").mockResolvedValue({ id, ...planoInput }),
+        searchByKeyword: vi.spyOn(PlanoRepository, "searchByKeyword").mockResolvedValue([]),
     };
     const alunos = {
-        findAll: vi.fn<IAlunoRepository["findAll"]>().mockResolvedValue([{ id, ...alunoInput }]),
-        findById: vi.fn<IAlunoRepository["findById"]>().mockResolvedValue({ id, ...alunoInput }),
-        create: vi.fn<IAlunoRepository["create"]>().mockResolvedValue({ id, ...alunoInput }),
-        update: vi.fn<IAlunoRepository["update"]>().mockResolvedValue({ id, ...alunoInput }),
-        remove: vi.fn<IAlunoRepository["remove"]>().mockResolvedValue({ id, ...alunoInput }),
-        searchByKeyword: vi.fn<IAlunoRepository["searchByKeyword"]>().mockResolvedValue([]),
-        findByPlano: vi.fn<IAlunoRepository["findByPlano"]>().mockResolvedValue([]),
-        existsByPlano: vi.fn<IAlunoRepository["existsByPlano"]>().mockResolvedValue(false),
+        findAll: vi.spyOn(AlunoRepository, "findAll").mockResolvedValue([{ id, ...alunoInput }]),
+        findById: vi.spyOn(AlunoRepository, "findById").mockResolvedValue({ id, ...alunoInput }),
+        create: vi.spyOn(AlunoRepository, "create").mockResolvedValue({ id, ...alunoInput }),
+        update: vi.spyOn(AlunoRepository, "update").mockResolvedValue({ id, ...alunoInput }),
+        remove: vi.spyOn(AlunoRepository, "remove").mockResolvedValue({ id, ...alunoInput }),
+        searchByKeyword: vi.spyOn(AlunoRepository, "searchByKeyword").mockResolvedValue([]),
+        findByPlano: vi.spyOn(AlunoRepository, "findByPlano").mockResolvedValue([]),
+        existsByPlano: vi.spyOn(AlunoRepository, "existsByPlano").mockResolvedValue(false),
     };
-    const mensalidades = { existsByAluno: vi.fn().mockResolvedValue(false) };
-    return { planos, alunos, mensalidades, planoService: new PlanoService(planos, alunos), alunoService: new AlunoService(alunos, planos, mensalidades) };
+    const mensalidades = { existsByAluno: vi.spyOn(MensalidadeRepository, "existsByAluno").mockResolvedValue(false) };
+    return { planos, alunos, mensalidades, planoService: new PlanoService(), alunoService: new AlunoService() };
 }
 
 describe("PlanoService", () => {
@@ -195,3 +196,7 @@ describe.each(["plano", "aluno"] as const)("comportamentos comuns: %s", (entity)
         await expect(service.remove(id)).rejects.toMatchObject({ status: 404 });
     });
 });
+
+// Unit tests use a mock database connection.
+vi.mock("../../config/supabase.js", () => ({ default: {} }));
+afterEach(() => vi.restoreAllMocks());

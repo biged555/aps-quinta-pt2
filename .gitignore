@@ -5,3 +5,4 @@ obsolete/
 coverage/
 .env.test
 .env.test.local
+/reports

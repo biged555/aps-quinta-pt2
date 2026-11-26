@@ -131,18 +131,16 @@ src/
 ├── docs/               # Contrato OpenAPI
 ├── errors/             # AppError e RepositoryError
 ├── middlewares/        # Tratamento central de erros
-├── model/              # Entidades e tipos de entrada
-├── repositories/       # Interfaces e classes de persistência
+├── model/              # Dados das entidades e funções de validação
+├── repositories/       # Classes que consultam o Supabase
 ├── routes/             # Associação de caminhos HTTP aos Controllers
 ├── services/           # Classes com regras de negócio
-├── validators/         # Validação dos dados recebidos
 ├── tests/
 │   ├── unit/           # Regras isoladas, erros e validade do OpenAPI
 │   ├── integration/    # HTTP, persistência e restrições reais
-│   └── helpers/        # Montagem da aplicação e limpeza do banco de testes
-├── app.ts              # Fábrica createApp com dependências injetadas
-└── server.ts           # Composição das dependências reais e listen
-migrations/             # Atualização do banco da primeira etapa
+│   └── helpers/        # Conexão e limpeza do banco de testes
+├── app.ts              # Express, rotas, Swagger e tratamento de erros
+└── server.ts           # Abre a porta para receber requisições
 scripts/                # Runner de testes e exportação de cobertura
 test-infra/             # PostgreSQL/PostgREST descartáveis via Compose
 reports/                # Relatórios versionados de cobertura
@@ -150,14 +148,28 @@ schema.sql              # Estrutura completa para banco novo
 seed.sql                # Dados opcionais de demonstração
 ```
 
-Controllers, Services e Repositories são classes com responsabilidades distintas. Services recebem
-interfaces de Repositories pelo construtor e guardam dependências privadas: isso aplica encapsulamento
-e injeção de dependências e permite mocks nos testes unitários. Models descrevem dados e não substituem
-a validação do JSON em tempo de execução.
+Cada arquivo importa diretamente o que utiliza, como no projeto da aula. O Controller cria seu
+Service, o Service importa os Repositories e cada Repository usa o cliente de `config/supabase.ts`.
+Não há interfaces de Repository, dependências passadas pelo construtor ou fábrica de aplicação.
 
-`createApp` não carrega credenciais nem abre uma porta fixa. `server.ts` conecta os Repositories reais
-e inicia a API. O middleware central trata `AppError` com seu status, e falhas inesperadas como 500.
-Erros de ausência de registro são separados de falhas de infraestrutura.
+Os Models reúnem os tipos dos dados e as funções que verificam campos obrigatórios, valores e datas.
+Os Services ficam com as regras que envolvem consultas ao banco, como impedir excluir um plano com
+alunos. O middleware transforma os erros em respostas HTTP, evitando repetir esse código nos Controllers.
+
+### Por onde começar a estudar
+
+Siga primeiro uma única operação: **cadastrar um plano**.
+
+1. `src/routes/planoRoutes.ts`: associa `POST /planos` ao método `create` do Controller.
+2. `src/controller/PlanoController.ts`: recebe `req.body`, chama o Service e responde com status 201.
+3. `src/services/PlanoService.ts`: chama `validarPlano` e depois `PlanoRepository.create`.
+4. `src/model/Plano.ts`: confere os campos e devolve os dados permitidos para cadastro.
+5. `src/repositories/PlanoRepository.ts`: faz o `insert` no Supabase e devolve o registro criado.
+
+Depois acompanhe `remove` no mesmo Service: ele consulta se existem alunos antes de excluir o plano.
+Alunos e Mensalidades seguem a mesma organização. `app.ts` reúne as rotas; `server.ts` inicia o servidor.
+Swagger descreve essas operações, e os testes conferem os resultados. Docker é usado somente nos
+testes de integração; não é necessário para iniciar a API com `npm run dev`.
 
 ## 5. Configuração e execução
 
@@ -219,32 +231,21 @@ ou pela plataforma de hospedagem. `npm run dev` e `npm run start:local` carregam
 
 ## 6. Banco de dados
 
-Escolha somente o caminho correspondente ao seu ambiente:
+Considerando um banco recriado do zero, execute no SQL Editor do Supabase:
 
-| Situação | Ação no SQL Editor do Supabase |
-| --- | --- |
-| Banco novo, sem tabelas | Executar [schema.sql](schema.sql) |
-| Já existem Planos e Alunos da primeira etapa | Executar [migrations/002_mensalidades.sql](migrations/002_mensalidades.sql) uma vez |
-| Mensalidades já foi migrada | Nenhuma nova migração é exigida pelas etapas 3 e 4 |
-| Deseja exemplos em banco preparado | Executar [seed.sql](seed.sql) uma vez, opcionalmente |
+1. [schema.sql](schema.sql), uma única vez: cria as três tabelas, relacionamentos, índices,
+   restrições, trigger e permissões de acesso da API.
+2. [seed.sql](seed.sql), opcionalmente, para inserir dados de exemplo.
 
-O schema completo já contém a evolução de Mensalidades. Não execute schema e migração em sequência
-no mesmo banco. A migração preserva os registros antigos e não cria cobranças automaticamente.
-Os scripts usam transação para evitar aplicação parcial.
+Toda a estrutura está no `schema.sql`; não há migração separada. O arquivo não apaga tabelas
+existentes. Os scripts usam transação para evitar aplicação parcial.
 
 O seed cria quatro planos, dois alunos e duas mensalidades pendentes do mês atual, com vencimento
 no dia 10. Ele utiliza UUIDs retornados pelas inserções e não é idempotente: outra execução cria
 novos registros. Não é necessário executá-lo para rodar os testes.
 
-As três tabelas usam RLS. O acesso da API depende da role de serviço e dos grants das tabelas.
-O schema concede explicitamente CRUD de Mensalidades à `service_role`; para Planos e Alunos,
-confira os grants do projeto se a Data API retornar `permission denied`. Nesse caso, execute:
-
-```sql
-GRANT USAGE ON SCHEMA public TO service_role;
-GRANT SELECT, INSERT, UPDATE, DELETE
-ON public.planos, public.alunos, public.mensalidades TO service_role;
-```
+As três tabelas usam RLS. O schema já concede acesso ao schema `public` e operações de
+consulta, criação, atualização e exclusão nas três tabelas à `service_role`, usada pela API.
 
 Não é necessário conceder acesso a `anon` ou `authenticated` para esta arquitetura.
 
@@ -452,10 +453,10 @@ são excluídos. Nenhuma camada de comportamento é removida, e `server.ts` perm
 
 | Métrica global | Cobertura | Mínimo |
 | --- | --- | --- |
-| Linhas | 97,45% | 60% |
-| Instruções | 93,24% | 60% |
-| Funções | 98,93% | 60% |
-| Ramificações | 89,81% | 60% |
+| Linhas | 97,99% | 60% |
+| Instruções | 93,59% | 60% |
+| Funções | 98,73% | 60% |
+| Ramificações | 90,26% | 60% |
 <!-- FIM_RESULTADOS_COBERTURA -->
 
 - [reports/coverage.md](reports/coverage.md): resumo versionado por arquivo, data e hash dos fontes/testes.
@@ -501,7 +502,7 @@ autenticação, deploy e CI/CD não foram incluídos no escopo destas quatro eta
 | --- | --- |
 | Variáveis Supabase ausentes | Copiar `.env.example`, preencher e usar `dev` ou `start:local` |
 | Erro 25006 no SQL | Banco/conexão está somente leitura; resolver no ambiente antes de executar os scripts |
-| Tabela não existe | Aplicar schema ou migração conforme o estado do banco |
+| Tabela não existe | Executar schema.sql no banco novo e conferir a URL do Supabase no .env |
 | Data API retorna permission denied | Conferir chave de serviço e grants da seção 6 |
 | Porta 3000 ocupada | Definir outra `PORT` no `.env` |
 | PowerShell bloqueia npm.ps1 | Usar `npm.cmd` no lugar de `npm` |

@@ -1,28 +1,28 @@
 {
   "total": {
     "lines": {
-      "total": 353,
-      "covered": 344,
+      "total": 349,
+      "covered": 342,
       "skipped": 0,
-      "pct": 97.45
+      "pct": 97.99
     },
     "statements": {
-      "total": 429,
-      "covered": 400,
+      "total": 406,
+      "covered": 380,
       "skipped": 0,
-      "pct": 93.24
+      "pct": 93.59
     },
     "functions": {
-      "total": 94,
-      "covered": 93,
+      "total": 79,
+      "covered": 78,
       "skipped": 0,
-      "pct": 98.93
+      "pct": 98.73
     },
     "branches": {
-      "total": 275,
-      "covered": 247,
+      "total": 267,
+      "covered": 241,
       "skipped": 0,
-      "pct": 89.81
+      "pct": 90.26
     },
     "branchesTrue": {
       "total": 0,
@@ -33,20 +33,20 @@
   },
   "src/app.ts": {
     "lines": {
-      "total": 15,
-      "covered": 15,
+      "total": 11,
+      "covered": 11,
       "skipped": 0,
       "pct": 100
     },
     "functions": {
-      "total": 4,
-      "covered": 4,
+      "total": 3,
+      "covered": 3,
       "skipped": 0,
       "pct": 100
     },
     "statements": {
-      "total": 17,
-      "covered": 17,
+      "total": 13,
+      "covered": 13,
       "skipped": 0,
       "pct": 100
     },
@@ -71,7 +71,7 @@
       "pct": 0
     },
     "statements": {
-      "total": 4,
+      "total": 3,
       "covered": 0,
       "skipped": 0,
       "pct": 0
@@ -85,14 +85,14 @@
   },
   "src/controller/AlunoController.ts": {
     "lines": {
-      "total": 10,
-      "covered": 10,
+      "total": 16,
+      "covered": 16,
       "skipped": 0,
       "pct": 100
     },
     "functions": {
-      "total": 8,
-      "covered": 8,
+      "total": 7,
+      "covered": 7,
       "skipped": 0,
       "pct": 100
     },
@@ -111,14 +111,14 @@
   },
   "src/controller/MensalidadeController.ts": {
     "lines": {
-      "total": 8,
-      "covered": 8,
+      "total": 12,
+      "covered": 12,
       "skipped": 0,
       "pct": 100
     },
     "functions": {
-      "total": 6,
-      "covered": 6,
+      "total": 5,
+      "covered": 5,
       "skipped": 0,
       "pct": 100
     },
@@ -137,14 +137,14 @@
   },
   "src/controller/PlanoController.ts": {
     "lines": {
-      "total": 9,
-      "covered": 9,
+      "total": 14,
+      "covered": 14,
       "skipped": 0,
       "pct": 100
     },
     "functions": {
-      "total": 7,
-      "covered": 7,
+      "total": 6,
+      "covered": 6,
       "skipped": 0,
       "pct": 100
     },
@@ -241,426 +241,10 @@
   },
   "src/model/Aluno.ts": {
     "lines": {
-      "total": 0,
-      "covered": 0,
+      "total": 34,
+      "covered": 32,
       "skipped": 0,
-      "pct": 0
-    },
-    "functions": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "statements": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "branches": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    }
-  },
-  "src/model/Mensalidade.ts": {
-    "lines": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "functions": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "statements": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "branches": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    }
-  },
-  "src/model/Plano.ts": {
-    "lines": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "functions": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "statements": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "branches": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    }
-  },
-  "src/repositories/AlunoRepository.ts": {
-    "lines": {
-      "total": 25,
-      "covered": 25,
-      "skipped": 0,
-      "pct": 100
-    },
-    "functions": {
-      "total": 9,
-      "covered": 9,
-      "skipped": 0,
-      "pct": 100
-    },
-    "statements": {
-      "total": 33,
-      "covered": 26,
-      "skipped": 0,
-      "pct": 78.78
-    },
-    "branches": {
-      "total": 18,
-      "covered": 10,
-      "skipped": 0,
-      "pct": 55.55
-    }
-  },
-  "src/repositories/IAlunoRepository.ts": {
-    "lines": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "functions": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "statements": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "branches": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    }
-  },
-  "src/repositories/IMensalidadeRepository.ts": {
-    "lines": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "functions": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "statements": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "branches": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    }
-  },
-  "src/repositories/IPlanoRepository.ts": {
-    "lines": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "functions": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "statements": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    },
-    "branches": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 0
-    }
-  },
-  "src/repositories/MensalidadeRepository.ts": {
-    "lines": {
-      "total": 22,
-      "covered": 22,
-      "skipped": 0,
-      "pct": 100
-    },
-    "functions": {
-      "total": 8,
-      "covered": 8,
-      "skipped": 0,
-      "pct": 100
-    },
-    "statements": {
-      "total": 29,
-      "covered": 25,
-      "skipped": 0,
-      "pct": 86.2
-    },
-    "branches": {
-      "total": 16,
-      "covered": 11,
-      "skipped": 0,
-      "pct": 68.75
-    }
-  },
-  "src/repositories/PlanoRepository.ts": {
-    "lines": {
-      "total": 19,
-      "covered": 19,
-      "skipped": 0,
-      "pct": 100
-    },
-    "functions": {
-      "total": 7,
-      "covered": 7,
-      "skipped": 0,
-      "pct": 100
-    },
-    "statements": {
-      "total": 25,
-      "covered": 20,
-      "skipped": 0,
-      "pct": 80
-    },
-    "branches": {
-      "total": 12,
-      "covered": 7,
-      "skipped": 0,
-      "pct": 58.33
-    }
-  },
-  "src/routes/alunoRoutes.ts": {
-    "lines": {
-      "total": 9,
-      "covered": 9,
-      "skipped": 0,
-      "pct": 100
-    },
-    "functions": {
-      "total": 1,
-      "covered": 1,
-      "skipped": 0,
-      "pct": 100
-    },
-    "statements": {
-      "total": 9,
-      "covered": 9,
-      "skipped": 0,
-      "pct": 100
-    },
-    "branches": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 100
-    }
-  },
-  "src/routes/mensalidadeRoutes.ts": {
-    "lines": {
-      "total": 7,
-      "covered": 7,
-      "skipped": 0,
-      "pct": 100
-    },
-    "functions": {
-      "total": 1,
-      "covered": 1,
-      "skipped": 0,
-      "pct": 100
-    },
-    "statements": {
-      "total": 7,
-      "covered": 7,
-      "skipped": 0,
-      "pct": 100
-    },
-    "branches": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 100
-    }
-  },
-  "src/routes/planoRoutes.ts": {
-    "lines": {
-      "total": 8,
-      "covered": 8,
-      "skipped": 0,
-      "pct": 100
-    },
-    "functions": {
-      "total": 1,
-      "covered": 1,
-      "skipped": 0,
-      "pct": 100
-    },
-    "statements": {
-      "total": 8,
-      "covered": 8,
-      "skipped": 0,
-      "pct": 100
-    },
-    "branches": {
-      "total": 0,
-      "covered": 0,
-      "skipped": 0,
-      "pct": 100
-    }
-  },
-  "src/services/AlunoService.ts": {
-    "lines": {
-      "total": 38,
-      "covered": 36,
-      "skipped": 0,
-      "pct": 94.73
-    },
-    "functions": {
-      "total": 10,
-      "covered": 10,
-      "skipped": 0,
-      "pct": 100
-    },
-    "statements": {
-      "total": 44,
-      "covered": 41,
-      "skipped": 0,
-      "pct": 93.18
-    },
-    "branches": {
-      "total": 22,
-      "covered": 20,
-      "skipped": 0,
-      "pct": 90.9
-    }
-  },
-  "src/services/MensalidadeService.ts": {
-    "lines": {
-      "total": 39,
-      "covered": 39,
-      "skipped": 0,
-      "pct": 100
-    },
-    "functions": {
-      "total": 9,
-      "covered": 9,
-      "skipped": 0,
-      "pct": 100
-    },
-    "statements": {
-      "total": 51,
-      "covered": 51,
-      "skipped": 0,
-      "pct": 100
-    },
-    "branches": {
-      "total": 28,
-      "covered": 28,
-      "skipped": 0,
-      "pct": 100
-    }
-  },
-  "src/services/PlanoService.ts": {
-    "lines": {
-      "total": 23,
-      "covered": 23,
-      "skipped": 0,
-      "pct": 100
-    },
-    "functions": {
-      "total": 7,
-      "covered": 7,
-      "skipped": 0,
-      "pct": 100
-    },
-    "statements": {
-      "total": 27,
-      "covered": 26,
-      "skipped": 0,
-      "pct": 96.29
-    },
-    "branches": {
-      "total": 12,
-      "covered": 11,
-      "skipped": 0,
-      "pct": 91.66
-    }
-  },
-  "src/validators/alunoValidator.ts": {
-    "lines": {
-      "total": 38,
-      "covered": 35,
-      "skipped": 0,
-      "pct": 92.1
-    },
-    "functions": {
-      "total": 3,
-      "covered": 3,
-      "skipped": 0,
-      "pct": 100
-    },
-    "statements": {
-      "total": 40,
-      "covered": 36,
-      "skipped": 0,
-      "pct": 90
-    },
-    "branches": {
-      "total": 53,
-      "covered": 49,
-      "skipped": 0,
-      "pct": 92.45
-    }
-  },
-  "src/validators/common.ts": {
-    "lines": {
-      "total": 8,
-      "covered": 8,
-      "skipped": 0,
-      "pct": 100
+      "pct": 94.11
     },
     "functions": {
       "total": 2,
@@ -669,19 +253,19 @@
       "pct": 100
     },
     "statements": {
-      "total": 8,
-      "covered": 8,
+      "total": 36,
+      "covered": 33,
       "skipped": 0,
-      "pct": 100
+      "pct": 91.66
     },
     "branches": {
-      "total": 10,
-      "covered": 10,
+      "total": 49,
+      "covered": 46,
       "skipped": 0,
-      "pct": 100
+      "pct": 93.87
     }
   },
-  "src/validators/mensalidadeValidator.ts": {
+  "src/model/Mensalidade.ts": {
     "lines": {
       "total": 27,
       "covered": 27,
@@ -707,12 +291,38 @@
       "pct": 100
     }
   },
-  "src/validators/planoValidator.ts": {
+  "src/model/Plano.ts": {
     "lines": {
-      "total": 25,
-      "covered": 24,
+      "total": 21,
+      "covered": 21,
       "skipped": 0,
-      "pct": 96
+      "pct": 100
+    },
+    "functions": {
+      "total": 1,
+      "covered": 1,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 23,
+      "covered": 23,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 40,
+      "covered": 40,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "src/model/validacao.ts": {
+    "lines": {
+      "total": 8,
+      "covered": 8,
+      "skipped": 0,
+      "pct": 100
     },
     "functions": {
       "total": 2,
@@ -721,16 +331,250 @@
       "pct": 100
     },
     "statements": {
-      "total": 27,
-      "covered": 26,
+      "total": 8,
+      "covered": 8,
       "skipped": 0,
-      "pct": 96.29
+      "pct": 100
     },
     "branches": {
-      "total": 44,
-      "covered": 43,
+      "total": 10,
+      "covered": 10,
       "skipped": 0,
-      "pct": 97.72
+      "pct": 100
+    }
+  },
+  "src/repositories/AlunoRepository.ts": {
+    "lines": {
+      "total": 24,
+      "covered": 24,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 8,
+      "covered": 8,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 32,
+      "covered": 25,
+      "skipped": 0,
+      "pct": 78.12
+    },
+    "branches": {
+      "total": 18,
+      "covered": 10,
+      "skipped": 0,
+      "pct": 55.55
+    }
+  },
+  "src/repositories/MensalidadeRepository.ts": {
+    "lines": {
+      "total": 21,
+      "covered": 21,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 7,
+      "covered": 7,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 28,
+      "covered": 24,
+      "skipped": 0,
+      "pct": 85.71
+    },
+    "branches": {
+      "total": 16,
+      "covered": 11,
+      "skipped": 0,
+      "pct": 68.75
+    }
+  },
+  "src/repositories/PlanoRepository.ts": {
+    "lines": {
+      "total": 18,
+      "covered": 18,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 6,
+      "covered": 6,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 24,
+      "covered": 19,
+      "skipped": 0,
+      "pct": 79.16
+    },
+    "branches": {
+      "total": 12,
+      "covered": 7,
+      "skipped": 0,
+      "pct": 58.33
+    }
+  },
+  "src/routes/alunoRoutes.ts": {
+    "lines": {
+      "total": 9,
+      "covered": 9,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 9,
+      "covered": 9,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "src/routes/mensalidadeRoutes.ts": {
+    "lines": {
+      "total": 7,
+      "covered": 7,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 7,
+      "covered": 7,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "src/routes/planoRoutes.ts": {
+    "lines": {
+      "total": 8,
+      "covered": 8,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 8,
+      "covered": 8,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "src/services/AlunoService.ts": {
+    "lines": {
+      "total": 36,
+      "covered": 34,
+      "skipped": 0,
+      "pct": 94.44
+    },
+    "functions": {
+      "total": 9,
+      "covered": 9,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 41,
+      "covered": 38,
+      "skipped": 0,
+      "pct": 92.68
+    },
+    "branches": {
+      "total": 22,
+      "covered": 20,
+      "skipped": 0,
+      "pct": 90.9
+    }
+  },
+  "src/services/MensalidadeService.ts": {
+    "lines": {
+      "total": 38,
+      "covered": 38,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 8,
+      "covered": 8,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 49,
+      "covered": 49,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 28,
+      "covered": 28,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "src/services/PlanoService.ts": {
+    "lines": {
+      "total": 22,
+      "covered": 22,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 6,
+      "covered": 6,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 25,
+      "covered": 24,
+      "skipped": 0,
+      "pct": 96
+    },
+    "branches": {
+      "total": 12,
+      "covered": 11,
+      "skipped": 0,
+      "pct": 91.66
     }
   }
 }
