@@ -17,10 +17,8 @@ unitários e de integração e documentação interativa Swagger/OpenAPI.
 6. [Banco de dados](#6-banco-de-dados)
 7. [Endpoints e respostas](#7-endpoints-e-respostas)
 8. [Exemplos de requisições](#8-exemplos-de-requisições)
-9. [Swagger e Postman](#9-swagger-e-postman)
+9. [Swagger](#9-swagger)
 10. [Testes e cobertura](#10-testes-e-cobertura)
-11. [Demonstração e entrega](#11-demonstração-e-entrega)
-12. [Solução de problemas](#12-solução-de-problemas)
 
 ## 1. Equipe e tecnologias
 
@@ -41,7 +39,6 @@ unitários e de integração e documentação interativa Swagger/OpenAPI.
 | swagger-ui-express / OpenAPI 3.0.3 | Documentação interativa |
 | @apidevtools/swagger-parser | Validação automatizada do contrato OpenAPI |
 | tsx | Execução TypeScript em desenvolvimento |
-| Postman | Coleção de demonstração das operações |
 | Git | Histórico e branches de evolução |
 
 ## 2. Entidades e relacionamentos
@@ -148,7 +145,7 @@ schema.sql              # Estrutura completa para banco novo
 seed.sql                # Dados opcionais de demonstração
 ```
 
-Cada arquivo importa diretamente o que utiliza, como no projeto da aula. O Controller cria seu
+Cada arquivo importa diretamente o que utiliza. O Controller cria seu
 Service, o Service importa os Repositories e cada Repository usa o cliente de `config/supabase.ts`.
 Não há interfaces de Repository, dependências passadas pelo construtor ou fábrica de aplicação.
 
@@ -156,20 +153,6 @@ Os Models reúnem os tipos dos dados e as funções que verificam campos obrigat
 Os Services ficam com as regras que envolvem consultas ao banco, como impedir excluir um plano com
 alunos. O middleware transforma os erros em respostas HTTP, evitando repetir esse código nos Controllers.
 
-### Por onde começar a estudar
-
-Siga primeiro uma única operação: **cadastrar um plano**.
-
-1. `src/routes/planoRoutes.ts`: associa `POST /planos` ao método `create` do Controller.
-2. `src/controller/PlanoController.ts`: recebe `req.body`, chama o Service e responde com status 201.
-3. `src/services/PlanoService.ts`: chama `validarPlano` e depois `PlanoRepository.create`.
-4. `src/model/Plano.ts`: confere os campos e devolve os dados permitidos para cadastro.
-5. `src/repositories/PlanoRepository.ts`: faz o `insert` no Supabase e devolve o registro criado.
-
-Depois acompanhe `remove` no mesmo Service: ele consulta se existem alunos antes de excluir o plano.
-Alunos e Mensalidades seguem a mesma organização. `app.ts` reúne as rotas; `server.ts` inicia o servidor.
-Swagger descreve essas operações, e os testes conferem os resultados. Docker é usado somente nos
-testes de integração; não é necessário para iniciar a API com `npm run dev`.
 
 ## 5. Configuração e execução
 
@@ -178,16 +161,11 @@ Docker Desktop com containers Linux e Compose v2 é necessário somente para int
 
 ### Clonar e instalar
 
-Enquanto as etapas estiverem em branches, a versão completa está em `04-documentacao-entrega`:
-
 ```bash
-git clone --branch 04-documentacao-entrega https://github.com/biged555/aps-quinta-pt2.git
+git clone https://github.com/biged555/aps-quinta-pt2.git
 cd aps-quinta-pt2
 npm ci
 ```
-
-A branch precisa estar publicada no remoto. Após a integração da versão final à `main`, também será
-possível clonar a branch padrão. `npm ci` usa as versões registradas no `package-lock.json`.
 
 ### Configurar variáveis
 
@@ -206,7 +184,7 @@ No Linux/macOS, use `cp .env.example .env`. Preencha o arquivo com os dados do s
 | `PORT` | Não | Porta da API; padrão 3000 |
 
 O [.env.example](.env.example) contém somente exemplos. `.env`, `.env.test` e `.env.test.local` estão
-ignorados pelo Git. Nenhuma chave deve ser colocada no Swagger ou no Postman. Esta API acadêmica
+ignorados pelo Git. Nenhuma chave deve ser colocada no Swagger. Esta API acadêmica
 não implementa autenticação de usuários; a chave de serviço é usada apenas na conexão servidor/banco.
 
 ### Preparar o banco e iniciar
@@ -374,7 +352,7 @@ Exemplo de conflito (409):
 { "message": "Já existe uma mensalidade para este aluno e competência." }
 ```
 
-## 9. Swagger e Postman
+## 9. Swagger
 
 Acesse **http://localhost:3000/api-docs/** com a API iniciada. O contrato está em
 [src/docs/openapi.ts](src/docs/openapi.ts) e é servido em `/openapi.json`.
@@ -388,10 +366,6 @@ As chamadas executam operações reais na instância aberta. O servidor do Swagg
 portanto utiliza a mesma origem e porta da página. Os assets são servidos localmente, sem CDN.
 A API não exige chave no Swagger; a chave secreta do Supabase nunca é enviada ao navegador.
 
-Alternativamente, importe [academia_system.postman_collection.json](academia_system.postman_collection.json).
-Defina `baseUrl` e execute manualmente os POSTs na ordem Plano → Aluno → Mensalidade. Scripts da coleção
-salvam os UUIDs em `planoId`, `alunoId` e `mensalidadeId`. Ajuste `dataPagamento` antes de pagar.
-Não execute a coleção inteira em sequência: ela inclui operações alternativas, como pagar e excluir.
 
 ## 10. Testes e cobertura
 
@@ -440,23 +414,24 @@ do Supabase hospedado. Nenhum banco de desenvolvimento/produção é usado nos t
 
 ### Cenários e relatórios
 
-A suíte cobre CRUD das três entidades, códigos HTTP e dados persistidos, pesquisas, ordenação, filtros,
-entradas inválidas, registros inexistentes, conflitos, concorrência na competência, histórico de valores,
-FKs, unicidade, CHECKs, trigger de cobrança paga e validade/serviço do Swagger.
+A suíte mantém o CRUD das três entidades, pesquisas, ordenação, filtros e validações representativas.
+Também verifica vínculos com planos e alunos ativos, duplicidade de cobrança, pagamento, bloqueios
+de exclusão, proteção de cobranças pagas no banco, tratamento de erros e documentação Swagger.
+Casos repetitivos e cenários detalhados de concorrência foram retirados para facilitar o estudo.
 
 A configuração exige **60% global em cada métrica**, falhando se qualquer limite não for atingido.
 Todos os fontes de `src` são incluídos, inclusive os não executados; somente testes/helpers e configuração
 são excluídos. Nenhuma camada de comportamento é removida, e `server.ts` permanece na medição.
 
 <!-- RESULTADOS_COBERTURA -->
-**188 testes aprovados: 136 unitários e 52 de integração.**
+**70 testes aprovados: 39 unitários e 31 de integração.**
 
 | Métrica global | Cobertura | Mínimo |
 | --- | --- | --- |
-| Linhas | 97,99% | 60% |
-| Instruções | 93,59% | 60% |
-| Funções | 98,73% | 60% |
-| Ramificações | 90,26% | 60% |
+| Linhas | 94,55% | 60% |
+| Instruções | 87,93% | 60% |
+| Funções | 97,46% | 60% |
+| Ramificações | 80,89% | 60% |
 <!-- FIM_RESULTADOS_COBERTURA -->
 
 - [reports/coverage.md](reports/coverage.md): resumo versionado por arquivo, data e hash dos fontes/testes.
@@ -465,51 +440,3 @@ são excluídos. Nenhuma camada de comportamento é removida, e `server.ts` perm
 - `coverage/lcov.info`: resultado para ferramentas de análise.
 
 Os resumos são atualizados automaticamente somente após `npm run test:coverage` passar.
-
-## 11. Demonstração e entrega
-
-Roteiro sugerido:
-
-1. Apresentar o domínio, as três entidades e o fluxo entre camadas.
-2. Mostrar Swagger e criar um plano, um aluno e uma mensalidade pendente.
-3. Demonstrar listagem, consulta e atualização de cada entidade.
-4. Tentar repetir a competência e excluir aluno/plano com vínculos: respostas 409.
-5. Excluir uma cobrança pendente e demonstrar exclusão de aluno e plano sem dependências.
-6. Em outro conjunto de registros, pagar uma mensalidade e demonstrar seu bloqueio de alteração/exclusão.
-7. Executar testes e apresentar os relatórios de cobertura.
-8. Mostrar os scripts SQL, `.env.example`, `.gitignore` e histórico Git.
-
-Histórico das etapas:
-
-| Branch | Evolução |
-| --- | --- |
-| `01-arquitetura-services` | POO, Services, validações, erros e unitários |
-| `02-mensalidades` | Terceira entidade, regras e migração |
-| `03-testes-integracao` | Integração, banco isolado e cobertura |
-| `04-documentacao-entrega` | Swagger, documentação, exemplos e validação final |
-
-As branches são cumulativas. A tag `entrega-parte-1` preserva a base. A versão final precisa estar
-publicada e acessível ao professor, e a branch correta deve ser indicada se ainda não houver merge na
-`main`. Criar um commit local não publica a branch. A pasta `obsolete/` contém material local ignorado,
-portanto não é requisito para executar ou entender o projeto entregue.
-
-Prazo do enunciado: **26/11/2026 às 22h10**, no **AVA**, por link do repositório Git. Frontend,
-autenticação, deploy e CI/CD não foram incluídos no escopo destas quatro etapas.
-
-## 12. Solução de problemas
-
-| Problema | Verificação |
-| --- | --- |
-| Variáveis Supabase ausentes | Copiar `.env.example`, preencher e usar `dev` ou `start:local` |
-| Erro 25006 no SQL | Banco/conexão está somente leitura; resolver no ambiente antes de executar os scripts |
-| Tabela não existe | Executar schema.sql no banco novo e conferir a URL do Supabase no .env |
-| Data API retorna permission denied | Conferir chave de serviço e grants da seção 6 |
-| Porta 3000 ocupada | Definir outra `PORT` no `.env` |
-| PowerShell bloqueia npm.ps1 | Usar `npm.cmd` no lugar de `npm` |
-| Testes de integração não iniciam | Abrir Docker Desktop, conferir containers Linux e `docker compose version` |
-| Integração executada diretamente falha | Usar `npm run test:integration`; o runner fornece ambiente isolado |
-| Branch final não encontrada no clone | Publicar `04-documentacao-entrega` ou usar a referência final disponibilizada pela equipe |
-
-Referências técnicas: [Swagger UI Express](https://github.com/scottie1984/swagger-ui-express),
-[cobertura do Vitest](https://vitest.dev/guide/coverage) e
-[PostgREST em Docker](https://docs.postgrest.org/en/stable/explanations/install.html).

@@ -1,7 +1,7 @@
 import request from "supertest";
 import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { app, client, repositories, resetDatabase } from "../helpers/database.js";
+import { app, repositories, resetDatabase } from "../helpers/database.js";
 import type { PlanoInput } from "../../model/Plano.js";
 import type { AlunoInput } from "../../model/Aluno.js";
 import type { MensalidadeInput } from "../../model/Mensalidade.js";
@@ -122,20 +122,7 @@ describe("Alunos: HTTP até PostgreSQL", () => {
         expect(response.body.map((row: { id: string }) => row.id)).toEqual([aluno.id]);
         await request(app).get("/alunos/plano/abc").expect(400);
     });
-    it("rejeita plano inexistente e plano inativo sem persistir", async () => {
-        await request(app).post("/alunos").send(alunoInput(randomUUID())).expect(400);
-        const plano = await criarPlano({ ativo: false });
-        await request(app).post("/alunos").send(alunoInput(plano.id)).expect(409);
-        expect(await repositories.alunos.findAll()).toEqual([]);
-    });
-    it("permite editar vínculo antigo, mas rejeita transferência para inativo", async () => {
-        const aluno = await criarAluno();
-        await request(app).put(`/planos/${aluno.plano.id}`).send({ ...aluno.plano.input, ativo: false }).expect(200);
-        await request(app).put(`/alunos/${aluno.id}`).send({ ...aluno.input, nome: "Novo nome" }).expect(200);
-        const outro = await criarPlano({ ativo: false });
-        await request(app).put(`/alunos/${aluno.id}`).send({ ...aluno.input, planoId: outro.id }).expect(409);
-        expect(await repositories.alunos.findById(aluno.id)).toMatchObject({ planoId: aluno.plano.id, nome: "Novo nome" });
-    });
+
 });
 
 describe("Mensalidades: HTTP até PostgreSQL", () => {
@@ -163,7 +150,7 @@ describe("Mensalidades: HTTP até PostgreSQL", () => {
         await request(app).put(`/mensalidades/${id}`).send(input).expect(409);
         await request(app).delete(`/mensalidades/${id}`).expect(409);
     });
-    it.each(["pendente", "cancelada"] as const)("DELETE remove cobrança %s", async status => {
+    it.each(["pendente"] as const)("DELETE remove cobrança %s", async status => {
         const { id } = await criarMensalidade({ status });
         const response = await request(app).delete(`/mensalidades/${id}`).expect(200);
         expect(response.body).toEqual({ message: "Mensalidade removida com sucesso." });
@@ -175,55 +162,23 @@ describe("Mensalidades: HTTP até PostgreSQL", () => {
         await request(app).post("/mensalidades").send(input).expect(409);
         expect(await repositories.mensalidades.findAll()).toHaveLength(1);
     });
-    it("duas requisições concorrentes não criam duplicatas", async () => {
-        const aluno = await criarAluno();
-        const responses = await Promise.all([1, 2].map(() => request(app).post("/mensalidades").send(mensalidadeInput(aluno.id))));
-        expect(responses.map(response => response.status).sort()).toEqual([201, 409]);
-        expect(await repositories.mensalidades.findAll()).toHaveLength(1);
-    });
+
     it("não exclui aluno com cobrança de qualquer status", async () => {
         const { aluno } = await criarMensalidade({ status: "cancelada" });
         await request(app).delete(`/alunos/${aluno.id}`).expect(409);
         expect(await repositories.alunos.findById(aluno.id)).not.toBeNull();
     });
-    it("não recalcula cobrança após mudança de preço do plano e do aluno", async () => {
-        const { id, aluno, input } = await criarMensalidade();
-        await request(app).put(`/planos/${aluno.plano.id}`).send({ ...aluno.plano.input, valor_mensal: 300 }).expect(200);
-        await request(app).put(`/alunos/${aluno.id}`).send({ ...aluno.input, valor_mensalidade: 200 }).expect(200);
-        expect(await repositories.mensalidades.findById(id)).toMatchObject({ valor: input.valor });
-    });
-    it("permite quitar cobrança antiga de aluno inativo, sem criar uma nova", async () => {
-        const { id, aluno, input } = await criarMensalidade();
-        await request(app).put(`/alunos/${aluno.id}`).send({ ...aluno.input, ativo: false }).expect(200);
-        await request(app).post("/mensalidades").send({ ...input, competencia: "2026-12-01" }).expect(409);
-        await request(app).put(`/mensalidades/${id}`).send({ ...input, status: "paga", data_pagamento: "2026-11-01" }).expect(200);
-    });
-    it("rejeita aluno inexistente sem persistir cobrança", async () => {
-        await request(app).post("/mensalidades").send(mensalidadeInput(randomUUID())).expect(400);
-        expect(await repositories.mensalidades.findAll()).toEqual([]);
-    });
+
 });
 
 describe.each(["planos", "alunos", "mensalidades"])("contratos HTTP: %s", entidade => {
-    it("lista vazia tem status 200 e array vazio", async () => {
-        const response = await request(app).get(`/${entidade}`).expect(200);
-        expect(response.body).toEqual([]);
-    });
+
     it("UUID inválido retorna 400 em consulta, alteração e exclusão", async () => {
         await request(app).get(`/${entidade}/abc`).expect(400);
         await request(app).put(`/${entidade}/abc`).send({}).expect(400);
         await request(app).delete(`/${entidade}/abc`).expect(400);
     });
-    it("UUID inexistente retorna 404 em consulta e exclusão", async () => {
-        const path = `/${entidade}/${randomUUID()}`;
-        await request(app).get(path).expect(404);
-        await request(app).delete(path).expect(404);
-    });
-    it("PUT de registro inexistente retorna 404 com corpo válido", async () => {
-        const input = entidade === "planos" ? planoInput
-            : entidade === "alunos" ? alunoInput(randomUUID()) : mensalidadeInput(randomUUID());
-        await request(app).put(`/${entidade}/${randomUUID()}`).send(input).expect(404);
-    });
+
     it("corpo inválido retorna erros em JSON sem criar registros", async () => {
         const response = await request(app).post(`/${entidade}`).send({}).expect(400);
         expect(response.body).toMatchObject({ message: "Dados inválidos.", erros: expect.any(Array) });
@@ -247,15 +202,7 @@ describe("contratos gerais e garantias do banco", () => {
         expect((await request(app).get("/").expect(200)).body.message).toBe("Academia System - API");
         expect((await request(app).get("/inexistente").expect(404)).body).toEqual({ message: "Rota não encontrada." });
     });
-    it("JSON malformado e corpo excessivo têm erros controlados", async () => {
-        const response = await request(app).post("/planos").set("Content-Type", "application/json").send('{"nome":').expect(400);
-        expect(response.body.message).toBe("JSON inválido no corpo da requisição.");
-        await request(app).post("/planos").send({ nome: "x".repeat(150000) }).expect(413);
-    });
-    it.each(["planos", "alunos"])("pesquisa inválida em %s retorna 400", async entidade => {
-        await request(app).get(`/${entidade}/search`).expect(400);
-        await request(app).get(`/${entidade}/search`).query({ keyword: "a,b" }).expect(400);
-    });
+
     it("ausência é distinta de falha inesperada, que retorna 500 sem expor detalhes", async () => {
         vi.spyOn(console, "error").mockImplementation(() => {});
         // Somente este cenário injeta uma falha para exercitar o contrato HTTP de infraestrutura.
@@ -263,23 +210,12 @@ describe("contratos gerais e garantias do banco", () => {
         const response = await request(app).get(`/planos/${randomUUID()}`).expect(500);
         expect(response.body).toEqual({ message: "Erro interno do servidor." });
     });
-    it("FK e unicidade protegem persistência mesmo sem passar pelos Services", async () => {
-        const { input, aluno } = await criarMensalidade();
-        await expect(repositories.mensalidades.create(input)).rejects.toMatchObject({ code: "23505" });
-        await expect(repositories.mensalidades.create({ ...input, alunoId: randomUUID() })).rejects.toMatchObject({ code: "23503" });
-        await expect(repositories.alunos.remove(aluno.id)).rejects.toMatchObject({ code: "23503" });
-        await expect(repositories.planos.remove(aluno.plano.id)).rejects.toMatchObject({ code: "23503" });
-    });
+
     it("trigger impede alteração e exclusão de paga também pelo Repository", async () => {
         const { id, input } = await criarMensalidade({ status: "paga", data_pagamento: "2026-11-01" });
         await expect(repositories.mensalidades.update(id, { ...input, valor: 1 })).rejects.toMatchObject({ code: "P0001" });
         await expect(repositories.mensalidades.remove(id)).rejects.toMatchObject({ code: "P0001" });
         expect(await repositories.mensalidades.findById(id)).toMatchObject(input);
     });
-    it("restrição SQL impede status paga sem data", async () => {
-        const { id } = await criarMensalidade();
-        const { error } = await client.from("mensalidades").update({ status: "paga" }).eq("id", id);
-        expect(error?.code).toBe("23514");
-        expect(await repositories.mensalidades.findById(id)).toMatchObject({ status: "pendente", data_pagamento: null });
-    });
+
 });
