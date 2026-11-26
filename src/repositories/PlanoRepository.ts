@@ -1,96 +1,43 @@
 import supabase from "../config/supabase.js";
-import type { Plano } from "../model/Plano.js";
+import type { Plano, PlanoInput } from "../model/Plano.js";
+import { RepositoryError } from "../errors/AppError.js";
 
-async function findAll() {
-    const { data, error } = await supabase
-        .from("planos")
-        .select("*")
-        .order("ordem_exibicao", { ascending: true });
-
-    if (error) {
-        throw error;
+class PlanoRepository {
+    async findAll(): Promise<Plano[]> {
+        const { data, error } = await supabase.from("planos").select("*").order("ordem_exibicao", { ascending: true });
+        if (error) throw new RepositoryError(error.code, error.message);
+        return data as Plano[];
     }
 
-    return data;
-}
-
-async function findById(id: string) {
-    const { data, error } = await supabase
-        .from("planos")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-    if (error) {
-        throw error;
+    async findById(id: string): Promise<Plano | null> {
+        const { data, error } = await supabase.from("planos").select("*").eq("id", id).maybeSingle();
+        if (error) throw new RepositoryError(error.code, error.message);
+        return data as Plano | null;
     }
 
-    return data;
-}
-
-async function create(plano: Plano) {
-    const { data, error } = await supabase
-        .from("planos")
-        .insert(plano)
-        .select()
-        .single();
-
-    if (error) {
-        throw error;
+    async create(input: PlanoInput): Promise<Plano> {
+        const { data, error } = await supabase.from("planos").insert(input).select().single();
+        if (error) throw new RepositoryError(error.code, error.message);
+        return data as Plano;
     }
 
-    return data;
-}
-
-async function update(id: string, plano: Plano) {
-    const { data, error } = await supabase
-        .from("planos")
-        .update(plano)
-        .eq("id", id)
-        .select()
-        .single();
-
-    if (error) {
-        throw error;
+    async update(id: string, input: PlanoInput): Promise<Plano | null> {
+        const { data, error } = await supabase.from("planos").update(input).eq("id", id).select().maybeSingle();
+        if (error) throw new RepositoryError(error.code, error.message);
+        return data as Plano | null;
     }
 
-    return data;
-}
-
-async function remove(id: string) {
-    const { data, error } = await supabase
-        .from("planos")
-        .delete()
-        .eq("id", id)
-        .select()
-        .single();
-
-    if (error) {
-        throw error;
+    async remove(id: string): Promise<Plano | null> {
+        const { data, error } = await supabase.from("planos").delete().eq("id", id).select().maybeSingle();
+        if (error) throw new RepositoryError(error.code, error.message);
+        return data as Plano | null;
     }
 
-    return data;
-}
-
-async function searchByKeyword(keyword: string) {
-    const { data, error } = await supabase
-        .from("planos")
-        .select("*")
-        .or(`nome.ilike.%${keyword}%,descricao.ilike.%${keyword}%`)
-        .order("ordem_exibicao", { ascending: true });
-
-    if (error) {
-        throw error;
+    async searchByKeyword(keyword: string): Promise<Plano[]> {
+        const { data, error } = await supabase.from("planos").select("*").or(`nome.ilike.%${keyword}%,descricao.ilike.%${keyword}%`).order("ordem_exibicao", { ascending: true });
+        if (error) throw new RepositoryError(error.code, error.message);
+        return data as Plano[];
     }
-
-    return data;
 }
 
-export default {
-    findAll,
-    findById,
-    create,
-    update,
-    remove,
-    searchByKeyword,
-}
+export default new PlanoRepository();

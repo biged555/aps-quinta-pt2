@@ -12,7 +12,7 @@ WITH planos_inseridos AS (
         ('Funcional', 'Aulas em grupo com foco em condicionamento.', '🤸', 3, 149.90, 6, true),
         ('Natação', 'Aulas de natação para adultos.', '🏊', 4, 219.90, 12, false)
     RETURNING id, nome
-)
+), alunos_inseridos AS (
 INSERT INTO public.alunos
     ("planoId", nome, descricao, email, telefone, data_nascimento, valor_mensalidade, ativo)
 SELECT
@@ -31,6 +31,18 @@ FROM (
         ('Cross Training', 'Diogo Yudi', 'Aluno intermediário, foco em condicionamento.',
          'diogo.yudi@email.com', '(41) 98888-2222', DATE '2002-11-02', 189.90, true)
 ) AS exemplos (plano_nome, nome, descricao, email, telefone, data_nascimento, valor_mensalidade, ativo)
-JOIN planos_inseridos AS planos ON planos.nome = exemplos.plano_nome;
+JOIN planos_inseridos AS planos ON planos.nome = exemplos.plano_nome
+RETURNING id, valor_mensalidade
+)
+INSERT INTO public.mensalidades
+    ("alunoId", competencia, valor, data_vencimento, data_pagamento, status)
+SELECT
+    id,
+    date_trunc('month', now() AT TIME ZONE 'America/Sao_Paulo')::date,
+    valor_mensalidade,
+    date_trunc('month', now() AT TIME ZONE 'America/Sao_Paulo')::date + 9,
+    NULL,
+    'pendente'
+FROM alunos_inseridos;
 
 COMMIT;

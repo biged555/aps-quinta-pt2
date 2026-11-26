@@ -16,19 +16,35 @@
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node scripts/test.mjs",
     "dev": "node --watch --env-file=.env --import=tsx/esm src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "test:unit": "vitest run src/tests/unit",
+    "test:watch": "vitest src/tests/unit",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "test:integration": "node scripts/test.mjs --integration",
+    "test:coverage": "node scripts/test.mjs --coverage",
+    "start:local": "node --env-file=.env dist/server.js"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "^13.1.0",
     "@types/express": "^5.0.6",
     "@types/node": "^26.2.0",
+    "@types/supertest": "^7.2.1",
+    "@types/swagger-ui-express": "^4.1.8",
+    "@vitest/coverage-v8": "^5.1.0",
+    "supertest": "^7.3.2",
     "tsx": "^4.23.12",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.115.0",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
