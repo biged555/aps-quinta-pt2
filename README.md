@@ -1,5 +1,7 @@
 # Academia System — API REST
 
+Alunos: Diogo Yudi e Eduardo Lopes
+
 API de gestão de **planos, alunos e mensalidades de uma academia**, desenvolvida para a disciplina
 Desenvolvimento Back-End, 4º período de Engenharia de Software, Campus SJP.
 
